@@ -1,0 +1,135 @@
+/*
+  Practica 2 - Jenkins CI/CD (solucion)
+
+  Objetivos:
+  - Ejecutar tests unitarios dentro de un contenedor Docker (python:3.6-slim)
+  - Construir la imagen Docker de la aplicacion (usando cache local)
+  - Ejecutar un flujo CD simple con docker compose: up -> e2e -> down --volumes
+
+  Notas:
+  - Este Jenkinsfile usa funciones auxiliares Groovy (runInDocker/composeUpTestDown).
+    Como siguiente paso, extrae estas funciones a una Jenkins Shared Library en el repo IaC
+    y sustituye las funciones locales por llamadas a la libreria.
+*/
+
+def runInDocker(String image, Closure body) {
+  // Requiere el plugin Docker Pipeline (docker-workflow) y acceso a un Docker daemon.
+  docker.image(image).inside {
+    body()
+  }
+}
+
+def composeUpTestDown(Map args = [:]) {
+  // Ciclo minimo de compose con limpieza garantizada.
+  // Pista: en una shared library puedes anadir reintentos, healthchecks y mejor captura de logs.
+  String upCmd = args.get('up', 'docker compose up -d')
+  String testCmd = args.get('test', '')
+  String downCmd = args.get('down', 'docker compose down --volumes')
+
+  if (!testCmd?.trim()) {
+    error("composeUpTestDown requiere un comando 'test' no vacio")
+  }
+
+  try {
+    sh upCmd
+    sh testCmd
+  } finally {
+    sh downCmd
+  }
+}
+
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  parameters {
+    booleanParam(
+      name: 'ENABLE_REGISTRY_PUSH',
+      defaultValue: false,
+      description: 'Opcional (Practica 2): construir y hacer push de la imagen a un registry privado.'
+    )
+  }
+
+  environment {
+    // Mantener el tag alineado con docker-compose.yml para que compose use la imagen local.
+    APP_IMAGE = "contrerasadr/devops-training-2025-python-app:0.0.1"
+    // Opcional (Practica 2): URL del registry local (accesible desde Jenkins por alias de red).
+    REGISTRY = "local-registry:5000"
+    // Opcional (Practica 2): ID de credenciales en Jenkins para autenticar contra el registry.
+    REGISTRY_CREDS_ID = "local-registry-creds"
+    // Endpoint expuesto por docker-compose.yml (app mapea 5001 -> 5000).
+    APP_URL = "http://localhost:5001/"
+  }
+
+  stages {
+    stage('CI - Unit tests (Docker agent)') {
+      steps {
+        script {
+          runInDocker('python:3.6-slim') {
+            sh 'python --version'
+            sh 'pip --version'
+            sh 'pip install -r requirements.txt'
+
+            // Mantenerlo simple: ejecutar tests unitarios directamente.
+            // (El Makefile de este repo usa tooling para Python 3.11, por eso lo evitamos aqui.)
+            sh 'pytest -q'
+          }
+        }
+      }
+    }
+
+    stage('CI - Build Docker image') {
+      steps {
+        script {
+          // Usa cache local (sin push).
+          docker.build(env.APP_IMAGE, "-f devops/Dockerfile .")
+        }
+      }
+    }
+
+    stage('CI - Push image to private registry (optional)') {
+      when {
+        expression { return params.ENABLE_REGISTRY_PUSH }
+      }
+      steps {
+        script {
+          // Tag de la imagen local para poder hacer push al registry.
+          def remoteTag = "${env.REGISTRY}/devops-training-2025-python-app:${env.BUILD_NUMBER}"
+          sh "docker tag ${env.APP_IMAGE} ${remoteTag}"
+
+          // Push usando credenciales de Jenkins (si el registry local no tiene auth, pueden ser credenciales dummy).
+          docker.withRegistry("http://${env.REGISTRY}", env.REGISTRY_CREDS_ID) {
+            def img = docker.image(remoteTag)
+            img.push()
+          }
+        }
+      }
+    }
+
+    stage('CD - Compose up + E2E + down') {
+      steps {
+        script {
+          // IMPORTANTE: Jenkins debe tener disponible `docker compose`.
+          composeUpTestDown(
+            up: 'docker compose up -d',
+            // E2E minimo: curl al endpoint. Si falla, muestra logs y falla el build.
+            test: "sleep 5 && curl -fsS ${env.APP_URL} || (docker compose logs && exit 1)",
+            down: 'docker compose down --volumes'
+          )
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      // Seguridad extra: limpieza best-effort aunque el stage CD falle antes de su finally.
+      sh 'docker compose down --volumes || true'
+      cleanWs()
+    }
+  }
+}
