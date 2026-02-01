@@ -1,0 +1,52 @@
+## Práctica 4 - GitLab CI/CD (estructura final / guía)
+##
+## Este fichero NO contiene la solución “copiable”.
+## Contiene la estructura final que deberías alcanzar tras completar los ejercicios,
+## con comentarios indicando qué debes implementar en cada punto.
+##
+## Tu pipeline real debe ser: .gitlab-ci.yml
+
+stages:
+  - ci
+  - cd
+
+variables:
+  # TODO (E2): Variables globales:
+  # IMAGE_NAME: "contrerasadr/devops-training-python-app:0.0.1"
+  # APP_URL: "http://localhost:5001/"
+
+ci:tests:
+  stage: ci
+  # TODO (E3): Ejecutar CI en contenedor:
+  # image: python:3.6-slim
+  script:
+    - echo "TODO: pip install -r requirements.txt"
+    - echo "TODO: pytest -q"
+
+ci:build-image:
+  stage: ci
+  image: docker:27
+  services:
+    # TODO (E4): Docker-in-Docker si el runner lo necesita
+    - docker:27-dind
+  script:
+    - echo "TODO: docker build -t $IMAGE_NAME -f devops/Dockerfile ."
+
+cd:deploy:
+  stage: cd
+  image: docker:27
+  services:
+    - docker:27-dind
+  rules:
+    # TODO (E5): Ejecutar solo en develop/master
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+    - when: never
+  script:
+    - echo "TODO: docker compose up -d"
+    - echo "TODO: curl -fsS $APP_URL"
+  after_script:
+    # TODO (E6): Cleanup garantizado
+    - echo "TODO: docker compose down --volumes || true"
+    - echo "TODO: docker rmi $IMAGE_NAME || true"
+
