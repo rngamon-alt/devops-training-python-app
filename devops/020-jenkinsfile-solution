@@ -1,135 +1,165 @@
 /*
-  Practica 2 - Jenkins CI/CD (solucion)
+  Práctica 2 - Jenkinsfile (estructura final / guía)
 
-  Objetivos:
-  - Ejecutar tests unitarios dentro de un contenedor Docker (python:3.6-slim)
-  - Construir la imagen Docker de la aplicacion (usando cache local)
-  - Ejecutar un flujo CD simple con docker compose: up -> e2e -> down --volumes
+  Este fichero NO contiene la solución “copiable”.
+  Contiene la estructura final que deberías alcanzar tras completar los ejercicios,
+  con comentarios indicando qué debes implementar en cada punto.
 
-  Notas:
-  - Este Jenkinsfile usa funciones auxiliares Groovy (runInDocker/composeUpTestDown).
-    Como siguiente paso, extrae estas funciones a una Jenkins Shared Library en el repo IaC
-    y sustituye las funciones locales por llamadas a la libreria.
+  Reglas del curso (ver Práctica 2):
+  - CI se ejecuta en cualquier rama.
+  - CD solo se ejecuta en develop/master y si el parámetro RUN_CD está activado.
 */
 
+// =========================
+// Ejercicio 4 (Groovy): función reutilizable
+// =========================
 def runInDocker(String image, Closure body) {
-  // Requiere el plugin Docker Pipeline (docker-workflow) y acceso a un Docker daemon.
-  docker.image(image).inside {
-    body()
-  }
+  // TODO (E4): Ejecuta `body()` dentro del contenedor indicado usando Docker Pipeline:
+  // docker.image(image).inside { body() }
 }
 
+// =========================
+// Ejercicio 9 (opcional): mini “librería” para Compose
+// =========================
 def composeUpTestDown(Map args = [:]) {
-  // Ciclo minimo de compose con limpieza garantizada.
-  // Pista: en una shared library puedes anadir reintentos, healthchecks y mejor captura de logs.
-  String upCmd = args.get('up', 'docker compose up -d')
-  String testCmd = args.get('test', '')
-  String downCmd = args.get('down', 'docker compose down --volumes')
-
-  if (!testCmd?.trim()) {
-    error("composeUpTestDown requiere un comando 'test' no vacio")
-  }
-
-  try {
-    sh upCmd
-    sh testCmd
-  } finally {
-    sh downCmd
-  }
+  // TODO (E9): Implementa el flujo:
+  // 1) args.up
+  // 2) args.test
+  // 3) siempre ejecutar args.down (aunque falle)
 }
 
 pipeline {
   agent any
 
   options {
-    timestamps()
-    disableConcurrentBuilds()
+    // Opcional: timestamps() / disableConcurrentBuilds()
   }
 
+  // =========================
+  // Ejercicio 6.3 (parámetros)
+  // =========================
   parameters {
-    booleanParam(
-      name: 'ENABLE_REGISTRY_PUSH',
-      defaultValue: false,
-      description: 'Opcional (Practica 2): construir y hacer push de la imagen a un registry privado.'
-    )
+    // TODO (E6.3): Añade un booleanParam RUN_CD (default false) para habilitar CD.
+    // booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD (solo develop/master)')
   }
 
+  // =========================
+  // Ejercicio 6.4 (variables de entorno)
+  // =========================
   environment {
-    // Mantener el tag alineado con docker-compose.yml para que compose use la imagen local.
-    APP_IMAGE = "contrerasadr/devops-training-2025-python-app:0.0.1"
-    // Opcional (Practica 2): URL del registry local (accesible desde Jenkins por alias de red).
-    REGISTRY = "local-registry:5000"
-    // Opcional (Practica 2): ID de credenciales en Jenkins para autenticar contra el registry.
-    REGISTRY_CREDS_ID = "local-registry-creds"
-    // Endpoint expuesto por docker-compose.yml (app mapea 5001 -> 5000).
-    APP_URL = "http://localhost:5001/"
+    // TODO (E6.4): Define variables reutilizables:
+    // - IMAGE_NAME (tag para docker build)
+    // - APP_URL (endpoint para e2e)
+    // - (opcional E7) REGISTRY y REGISTRY_CREDS_ID
   }
 
   stages {
-    stage('CI - Unit tests (Docker agent)') {
+    // =========================
+    // Ejercicio 1 (estructura básica)
+    // =========================
+    stage('Info') {
+      steps {
+        // TODO (E1): imprime JOB_NAME y BUILD_NUMBER
+        // echo "Job: ${env.JOB_NAME}"
+        // echo "Build: ${env.BUILD_NUMBER}"
+      }
+    }
+
+    // =========================
+    // Ejercicio 2 (Docker como agente) + Ejercicio 4 (refactor con runInDocker)
+    // =========================
+    stage('CI - Test') {
       steps {
         script {
-          runInDocker('python:3.6-slim') {
-            sh 'python --version'
-            sh 'pip --version'
-            sh 'pip install -r requirements.txt'
-
-            // Mantenerlo simple: ejecutar tests unitarios directamente.
-            // (El Makefile de este repo usa tooling para Python 3.11, por eso lo evitamos aqui.)
-            sh 'pytest -q'
-          }
+          // TODO (E2/E4): Ejecuta los tests unitarios dentro de python:3.6-slim.
+          // Ejemplo conceptual:
+          // runInDocker('python:3.6-slim') {
+          //   sh 'pip install -r requirements.txt'
+          //   sh 'pytest -q'
+          // }
         }
       }
     }
 
-    stage('CI - Build Docker image') {
+    // =========================
+    // Ejercicio 5 (docker build)
+    // =========================
+    stage('CI - Build image') {
       steps {
         script {
-          // Usa cache local (sin push).
-          docker.build(env.APP_IMAGE, "-f devops/Dockerfile .")
+          // TODO (E5): Construye la imagen Docker usando el Dockerfile del repo:
+          // docker.build(env.IMAGE_NAME, "-f devops/Dockerfile .")
         }
       }
     }
 
-    stage('CI - Push image to private registry (optional)') {
+    // =========================
+    // Ejercicio 7 (opcional): push a registry privado
+    // =========================
+    stage('CI - Push image (opcional)') {
       when {
-        expression { return params.ENABLE_REGISTRY_PUSH }
+        // TODO (E7): Ejecuta solo si has añadido un parámetro tipo ENABLE_REGISTRY_PUSH
+        // expression { return params.ENABLE_REGISTRY_PUSH }
       }
       steps {
         script {
-          // Tag de la imagen local para poder hacer push al registry.
-          def remoteTag = "${env.REGISTRY}/devops-training-2025-python-app:${env.BUILD_NUMBER}"
-          sh "docker tag ${env.APP_IMAGE} ${remoteTag}"
-
-          // Push usando credenciales de Jenkins (si el registry local no tiene auth, pueden ser credenciales dummy).
-          docker.withRegistry("http://${env.REGISTRY}", env.REGISTRY_CREDS_ID) {
-            def img = docker.image(remoteTag)
-            img.push()
-          }
+          // TODO (E7): Taggea y pushea la imagen a local-registry:5000 usando credenciales Jenkins.
+          // docker.withRegistry("http://${env.REGISTRY}", env.REGISTRY_CREDS_ID) { ... }
         }
       }
     }
 
-    stage('CD - Compose up + E2E + down') {
+    // =========================
+    // Ejercicio 6 (compose) + Ejercicio 6.1 (solo develop/master) + Ejercicio 6.3 (RUN_CD)
+    // =========================
+    stage('CD') {
+      when {
+        allOf {
+          anyOf {
+            branch 'develop'
+            branch 'master'
+          }
+          // TODO (E6.3): Solo ejecutar CD si RUN_CD es true
+          // expression { return params.RUN_CD }
+        }
+      }
       steps {
         script {
-          // IMPORTANTE: Jenkins debe tener disponible `docker compose`.
-          composeUpTestDown(
-            up: 'docker compose up -d',
-            // E2E minimo: curl al endpoint. Si falla, muestra logs y falla el build.
-            test: "sleep 5 && curl -fsS ${env.APP_URL} || (docker compose logs && exit 1)",
-            down: 'docker compose down --volumes'
-          )
+          // TODO (E6.2): Define DEPLOY_ENV según la rama (develop=DEV, master=PRO) y muestra logs.
+          // TODO (E6): Ejecuta:
+          // - docker compose up -d
+          // - e2e (curl APP_URL)
+          // - limpieza con docker compose down --volumes
+          //
+          // Recomendado: encapsular con composeUpTestDown(...) (E9).
+        }
+      }
+      post {
+        // =========================
+        // Ejercicio 6.5 (hooks post)
+        // =========================
+        always {
+          // TODO (E6.5): Limpieza garantizada:
+          // sh 'docker compose down --volumes || true'
+          // sh 'docker rmi IMAGE_NAME || true'
+        }
+        success {
+          // TODO (E6.5): Mensaje de éxito
+          // echo 'SUCCESS'
+        }
+        failure {
+          // TODO (E6.5): Mensaje de fallo + logs útiles
+          // echo 'FAILURE'
+          // sh 'docker compose logs || true'
         }
       }
     }
   }
 
   post {
-    always {
-      // Seguridad extra: limpieza best-effort aunque el stage CD falle antes de su finally.
-      sh 'docker compose down --volumes || true'
-      cleanWs()
-    }
+    // Post global del pipeline (opcional):
+    // - limpieza adicional
+    // - notificaciones
   }
 }
+
