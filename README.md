@@ -1,4 +1,4 @@
-# DevOps Training 2025 - App Python
+# DevOps Training - App Python
 
 Repositorio de la aplicación Python usada en el curso para practicar estrategias DevOps de CI/CD en proyectos de lenguaje interpretado.
 
@@ -9,9 +9,9 @@ Repositorio de la aplicación Python usada en el curso para practicar estrategia
 - Este README se actualizará de forma incremental durante el curso.
 
 ## Repositorios y ramas
-- App Python (base `feat/base`): https://github.com/contreras-adr/devops-training-2025-python-app/tree/feat/base
-- App Java (base `feat/base`): https://github.com/contreras-adr/devops-training-2025-java-app/tree/feat/base
-- IaC/DevOps (base `feat/base`): https://github.com/contreras-adr/devops-training-2025-iac-devops/tree/feat/base
+- App Python (base `feat/base`): https://github.com/contreras-adr/devops-training-python-app/tree/feat/base
+- App Java (base `feat/base`): https://github.com/contreras-adr/devops-training-java-app/tree/feat/base
+- IaC/DevOps (base `feat/base`): https://github.com/contreras-adr/devops-training-iac-devops/tree/feat/base
 
 ## Propósito del repositorio
 - App Python simple con soporte de contenedores.
