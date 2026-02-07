@@ -1,0 +1,20 @@
+# Práctica 3 - GitHub Actions (dummy)
+#
+# Punto de partida: workflow mínimo para validar que Actions funciona en el repo.
+# En la Práctica 3 irás ampliando este workflow para llegar a CI/CD.
+
+name: CI (dummy)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dummy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mostrar contexto
+        run: |
+          echo "Repo: $GITHUB_REPOSITORY"
+          echo "Ref:  $GITHUB_REF"
+          echo "Branch: $GITHUB_REF_NAME"
+
