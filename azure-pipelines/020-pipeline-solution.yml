@@ -1,0 +1,107 @@
+# Práctica 5 - Azure DevOps Pipelines (estructura final / guía)
+#
+# Este fichero NO contiene la solución “copiable”.
+# Contiene la estructura final que deberías alcanzar tras completar los ejercicios,
+# con comentarios indicando qué debes implementar en cada punto.
+#
+# Tu pipeline real recomendado: azure-pipelines.yml (en la raíz del repo)
+
+# =========================
+# Ejercicio 2: triggers
+# =========================
+trigger:
+  # TODO (E2): incluir develop/master
+  branches:
+    include: []
+
+pr:
+  # TODO (E2): PR hacia develop/master
+  branches:
+    include: []
+
+# =========================
+# Ejercicio 4: parámetros
+# =========================
+parameters:
+  # TODO (E4): parámetro RUN_CD (boolean)
+  # - name: RUN_CD
+  #   type: boolean
+  #   default: false
+  #
+  # TODO (E4): parámetro DEPLOY_ENV (string/choice simulado)
+  # - name: DEPLOY_ENV
+  #   type: string
+  #   default: DEV
+
+# =========================
+# Ejercicio 3: variables
+# =========================
+variables:
+  # TODO (E3): variables no secret (pueden venir de variable groups)
+  # - group: <nombre-variable-group>
+  # - name: IMAGE_NAME
+  #   value: "contrerasadr/devops-training-python-app:0.0.1"
+  # - name: APP_URL
+  #   value: "http://localhost:5001/"
+
+stages:
+  # =========================
+  # CI
+  # =========================
+  - stage: CI
+    displayName: "CI"
+    jobs:
+      - job: tests
+        displayName: "Unit tests"
+        pool:
+          vmImage: ubuntu-latest
+        # TODO (E5): ejecutar el job en contenedor (Docker como agente)
+        # container: python:3.6-slim
+        steps:
+          - checkout: self
+          - script: |
+              echo "TODO (E5): pip install -r requirements.txt"
+              echo "TODO (E5): pytest -q"
+            displayName: "Tests (TODO)"
+
+      - job: build_image
+        displayName: "Build image"
+        dependsOn: tests
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - script: |
+              echo "TODO (E6): docker build -t $(IMAGE_NAME) -f devops/Dockerfile ."
+            displayName: "Docker build (TODO)"
+
+  # =========================
+  # CD (condicionado por rama + parámetro)
+  # =========================
+  - stage: CD
+    displayName: "CD"
+    dependsOn: CI
+    # TODO (E7): condición:
+    # - solo develop/master
+    # - y RUN_CD == true
+    condition: false
+    jobs:
+      - job: deploy
+        displayName: "Deploy (simulado) + E2E"
+        pool:
+          # TODO (E9): si usas agente local, cambia a un pool self-hosted
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - script: |
+              echo "TODO (E7/E6.2): DEPLOY_ENV según rama o parámetro"
+              echo "TODO (E8/E9): docker compose up -d"
+              echo "TODO (E8/E9): curl -fsS $(APP_URL)"
+            displayName: "CD steps (TODO)"
+          - script: |
+              echo "TODO (E8/E6.5): cleanup siempre"
+              echo "TODO: docker compose down --volumes || true"
+              echo "TODO: docker rmi $(IMAGE_NAME) || true"
+            displayName: "Cleanup (TODO)"
+            condition: always()
+
