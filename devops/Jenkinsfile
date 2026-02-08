@@ -117,7 +117,7 @@ pipeline {
 
           devopsLib.composeUpTestDown(
             up: "docker compose -p ${env.COMPOSE_PROJECT} up -d",
-            test: "sleep 5 && curl -fsS ${env.APP_URL}",
+            test: "sleep 5 && docker compose logs app && curl -fsS ${env.APP_URL}",
             down: "docker compose -p ${env.COMPOSE_PROJECT} down --volumes"
           )
         }
