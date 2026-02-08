@@ -50,6 +50,7 @@ pipeline {
     // TODO (E6.4): Define variables reutilizables:
     // - IMAGE_NAME (tag para docker build)
     // - APP_URL (endpoint para e2e)
+    // - CI_IMAGE_NAME (imagen construida desde devops/ci.Dockerfile para usar `make`)
     // - (opcional E7) REGISTRY y REGISTRY_CREDS_ID
   }
 
@@ -66,14 +67,50 @@ pipeline {
     }
 
     // =========================
+    // Ejercicio 3 (preparación): construir imagen CI con make
+    // =========================
+    stage('CI - Build tools image') {
+      steps {
+        script {
+          // TODO (E3): Construye una imagen de CI desde devops/ci.Dockerfile.
+          // Ejemplo:
+          // env.CI_IMAGE_NAME = "python-ci-tools:${env.BUILD_NUMBER}"
+          // docker.build(env.CI_IMAGE_NAME, "-f devops/ci.Dockerfile .")
+        }
+      }
+    }
+
+    // =========================
+    // Ejercicio 3 (separar CI): stage Lint
+    // =========================
+    stage('CI - Lint') {
+      steps {
+        script {
+          // TODO (E3/E4): Ejecuta lint en contenedor Python.
+          // runInDocker(env.CI_IMAGE_NAME) {
+          //   sh 'pip install -r requirements.txt flake8 mypy'
+          //   sh 'make lint'
+          // }
+          //
+          // Nota docente:
+          // La primera ejecución puede fallar por formato (black --check).
+          // Flujo esperado:
+          // 1) crear rama `fix/lint`
+          // 2) ejecutar `make reformat` en local
+          // 3) commit + push y relanzar Jenkins
+        }
+      }
+    }
+
+    // =========================
     // Ejercicio 2 (Docker como agente) + Ejercicio 4 (refactor con runInDocker)
     // =========================
     stage('CI - Test') {
       steps {
         script {
-          // TODO (E2/E4): Ejecuta los tests unitarios dentro de python:3.6-slim.
+          // TODO (E2/E4): Ejecuta los tests unitarios dentro de la imagen CI construida.
           // Ejemplo conceptual:
-          // runInDocker('python:3.6-slim') {
+          // runInDocker(env.CI_IMAGE_NAME) {
           //   sh 'pip install -r requirements.txt'
           //   sh 'pytest -q'
           // }
@@ -128,7 +165,7 @@ pipeline {
           // TODO (E6.2): Define DEPLOY_ENV según la rama (develop=DEV, master=PRO) y muestra logs.
           // TODO (E6): Ejecuta:
           // - docker compose up -d
-          // - e2e (curl APP_URL)
+          // - mostrar logs del servicio
           // - limpieza con docker compose down --volumes
           //
           // Recomendado: encapsular con composeUpTestDown(...) (E9).
@@ -162,4 +199,3 @@ pipeline {
     // - notificaciones
   }
 }
-

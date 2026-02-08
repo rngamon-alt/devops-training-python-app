@@ -6,7 +6,8 @@ import os
 
 app = Flask(__name__)
 
-#~comment
+# ~comment
+
 
 def favorite_colors() -> List[Dict]:
     config = {
@@ -28,7 +29,9 @@ def favorite_colors() -> List[Dict]:
 
 @app.route("/")
 def index() -> str:
-    return json.dumps({"favorite_colors": favorite_colors()})
+    # Intentional formatting issue for the lint exercise: black will fix this.
+    payload = { "favorite_colors": favorite_colors() }
+    return json.dumps(payload)
 
 
 if __name__ == "__main__":

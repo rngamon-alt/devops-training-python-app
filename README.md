@@ -47,14 +47,50 @@ curl localhost:5001
 Desde la raiz del repo:
 
 ```bash
+# 1) Construir imagen de CI (incluye make)
+docker build -t python-ci-tools:local -f devops/ci.Dockerfile .
+
 # Lint (flake8 + black + mypy)
-docker run --rm -v "$PWD":/app -w /app python:3.11-slim sh -lc \
+docker run --rm -v "$PWD":/app -w /app python-ci-tools:local sh -lc \
   "pip install -r requirements.txt flake8 mypy && make lint"
 
+# Reformat
+docker run --rm -v "$PWD":/app -w /app python-ci-tools:local sh -lc \
+  "pip install -r requirements.txt flake8 mypy && make reformat"
+
 # Tests (incluye lint porque `make test` depende de `make lint`)
-docker run --rm -v "$PWD":/app -w /app python:3.11-slim sh -lc \
+docker run --rm -v "$PWD":/app -w /app python-ci-tools:local sh -lc \
   "pip install -r requirements.txt flake8 mypy && make test"
 ```
+
+### Si falla el stage `CI - Lint` en Jenkins (caso esperado la primera vez)
+En Python es normal que falle al principio por `black --check` hasta formatear código.
+
+Captura de referencia del error:
+
+![Error CI Lint Python](make-lint-error.png)
+
+Flujo recomendado:
+
+```bash
+# 1) Crear rama de corrección
+git switch -c fix/lint
+
+# 2) Reproducir y corregir lint en local
+docker run --rm -v "$PWD":/app -w /app python-ci-tools:local sh -lc \
+  "pip install -r requirements.txt flake8 mypy && make reformat && make lint"
+
+# 3) Subir cambios a la rama de fix
+git add .
+git commit -m "fix: aplicar reformat para pasar CI lint"
+git push -u origin fix/lint
+
+# 4) Abrir PR de fix/lint -> develop y mergear
+# 5) Relanzar Jenkins sobre develop
+```
+
+Después del merge a `develop`, confirma que `CI - Lint` pasa en la rama objetivo.
+
 ### Limpiar entorno
 ```bash
 docker compose down -v

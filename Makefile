@@ -12,8 +12,8 @@ help:             ## Show the help.
 
 .PHONY: lint
 reformat:             ## Run pep8, black, mypy linters.
-	$(ENV_PREFIX)black  --pyi -l 79 -t py311 src/
-	$(ENV_PREFIX)black  --pyi -l 79 -t py311 tests/
+	$(ENV_PREFIX)black  -l 79 -t py311 src/
+	$(ENV_PREFIX)black  -l 79 -t py311 tests/
 	$(ENV_PREFIX)black  --ipynb -l 79 -t py311 lab/
 
 lint:             ## Run pep8, black, mypy linters.
@@ -28,4 +28,3 @@ test: lint        ## Run tests and generate coverage report.
 	$(ENV_PREFIX)coverage run -m pytest -v  -l --tb=short --maxfail=1 tests/
 	$(ENV_PREFIX)coverage xml
 	$(ENV_PREFIX)coverage html 
-

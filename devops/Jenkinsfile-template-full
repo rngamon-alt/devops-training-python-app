@@ -42,7 +42,7 @@ pipeline {
     // APP_URL = 'http://localhost:5001/'
     // COMPOSE_FILE = 'docker-compose.yml'
     // COMPOSE_SERVICE = 'app'
-    // PYTHON_TEST_IMAGE = 'python:3.6-slim'
+    // CI_IMAGE = "python-ci-tools:${env.BUILD_NUMBER}"  // construida desde devops/ci.Dockerfile con make
 
     // [E5] TODO: define repositorio local de imagen.
     // IMAGE_REPO_LOCAL = 'contrerasadr/devops-training-python-app'
@@ -76,12 +76,39 @@ pipeline {
       }
     }
 
+    stage('CI - Build tools image') {
+      steps {
+        script {
+          // [E3] TODO: construir imagen CI para ejecutar `make lint` y `make test`.
+          // Ejemplo:
+          // docker.build(env.CI_IMAGE, "-f devops/ci.Dockerfile .")
+        }
+      }
+    }
+
+    stage('CI - Lint') {
+      steps {
+        script {
+          // [E3][E4][E12] TODO: ejecutar lint en contenedor vía librería centralizada.
+          // Ejemplo:
+          // devopsLib.runInDocker(env.CI_IMAGE) {
+          //   sh 'pip install -r requirements.txt flake8 mypy'
+          //   sh 'make lint'
+          // }
+          //
+          // Nota docente:
+          // La primera ejecución puede fallar por `black --check`.
+          // Flujo esperado: rama `fix/lint` -> `make reformat` -> commit/push -> relanzar Jenkins.
+        }
+      }
+    }
+
     stage('CI - Test') {
       steps {
         script {
           // [E2][E4][E12] TODO: ejecutar tests en contenedor vía librería centralizada.
           // Ejemplo:
-          // devopsLib.runInDocker(env.PYTHON_TEST_IMAGE) {
+          // devopsLib.runInDocker(env.CI_IMAGE) {
           //   sh 'python --version'
           //   sh 'pip install -r requirements.txt'
           //   sh 'pytest -q'
@@ -154,11 +181,11 @@ pipeline {
           //   image: cdImage
           // )
 
-          // [E6][E6.5][E12] TODO: ejecutar up -> test -> down con cleanup garantizado.
+          // [E6][E6.5][E12] TODO: ejecutar up -> logs -> down con cleanup garantizado.
           // Ejemplo:
           // devopsLib.composeUpTestDown(
           //   up: "docker compose -p ${env.COMPOSE_PROJECT} up -d",
-          //   test: "sleep 5 && curl -fsS ${env.APP_URL}",
+          //   test: "sleep 5 && docker compose -p ${env.COMPOSE_PROJECT} logs app",
           //   down: "docker compose -p ${env.COMPOSE_PROJECT} down --volumes"
           // )
         }
