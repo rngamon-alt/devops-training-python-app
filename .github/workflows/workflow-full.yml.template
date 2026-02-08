@@ -1,0 +1,163 @@
+# Template V2: includes optional exercises.
+# Treat as refactor of V1 once V1 is working.
+# This is a guide, not a final copy-paste solution.
+# Official docs:
+# - Workflow syntax: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
+# - Contexts: https://docs.github.com/actions/learn-github-actions/contexts
+# - Jobs in containers: https://docs.github.com/actions/using-jobs/running-jobs-in-a-container
+# - Conditions: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idif
+# - Secrets: https://docs.github.com/actions/security-guides/encrypted-secrets
+
+name: "CI/CD Template Full (V2)"
+
+on:
+  push:
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch:
+    inputs:
+      RUN_CD:
+        description: "Run CD stage"
+        required: false
+        type: boolean
+        default: false
+      ENABLE_REGISTRY_PUSH:
+        description: "Push image to registry"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # [E3] TODO: define env vars (example values below)
+  # IMAGE_REPO: contrerasadr/devops-training-python-app
+  # REGISTRY_HOST: local-registry:5000
+  # REGISTRY_REPO: contrerasadr/devops-training-python-app
+  # COMPOSE_FILE: docker-compose.yml
+  # COMPOSE_SERVICE: app
+  IMAGE_REPO: "REPLACE_ME"
+  REGISTRY_HOST: "REPLACE_ME"
+  REGISTRY_REPO: "REPLACE_ME"
+  COMPOSE_FILE: "docker-compose.yml"
+  COMPOSE_SERVICE: "app"
+
+jobs:
+  ci:
+    # [E5] TODO: select environment by branch
+    # environment: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}
+    runs-on: ubuntu-latest
+    steps:
+      # [E2] TODO: checkout + info
+      - uses: actions/checkout@v4
+      - name: Info
+        run: |
+          echo "branch=${GITHUB_REF_NAME}"
+          echo "sha=${GITHUB_SHA}"
+
+      # [E3] TODO: set version variables
+      - name: Set version (TODO)
+        run: |
+          # Example:
+          # echo "IMAGE_VERSION=$(cat VERSION)" >> $GITHUB_ENV
+          # echo "IMAGE_NAME=${IMAGE_REPO}:$(cat VERSION)" >> $GITHUB_ENV
+          # echo "CI_IMAGE=python-ci-tools:${GITHUB_RUN_ID}" >> $GITHUB_ENV
+          # echo "REGISTRY_IMAGE=${REGISTRY_HOST}/${REGISTRY_REPO}:$(cat VERSION)" >> $GITHUB_ENV
+          echo "TODO: set IMAGE_VERSION, IMAGE_NAME, CI_IMAGE, REGISTRY_IMAGE"
+
+      # [E6] TODO: build CI image (devops/ci.Dockerfile)
+      - name: Build CI image (TODO)
+        run: |
+          # Example:
+          # docker build -t "${CI_IMAGE}" -f devops/ci.Dockerfile .
+          echo "TODO: docker build CI image"
+
+      # [E6] TODO: Lint
+      - name: CI - Lint (TODO)
+        run: |
+          # Example:
+          # docker run --rm -v "${GITHUB_WORKSPACE}:/app" -w /app "${CI_IMAGE}" sh -lc \
+          #   "pip install -r requirements.txt flake8 mypy && make lint"
+          echo "TODO: run lint inside CI image"
+
+      # [E6] TODO: Test
+      - name: CI - Test (TODO)
+        run: |
+          # Example:
+          # docker run --rm -v "${GITHUB_WORKSPACE}:/app" -w /app "${CI_IMAGE}" sh -lc \
+          #   "pip install -r requirements.txt && pytest -q"
+          echo "TODO: run tests inside CI image"
+
+      # [E7] TODO: Build app image
+      - name: CI - Build image (TODO)
+        run: |
+          # Example:
+          # docker build -t "${IMAGE_NAME}" -f devops/Dockerfile .
+          echo "TODO: docker build app image"
+
+      # [Opcional A] Push image to registry
+      - name: CI - Push image (optional) (TODO)
+        if: false
+        run: |
+          # Example:
+          # echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "${REGISTRY_HOST}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+          # docker tag "${IMAGE_NAME}" "${REGISTRY_IMAGE}"
+          # docker push "${REGISTRY_IMAGE}"
+          echo "TODO: login + push image"
+
+      # [Opcional C] Use shared action (devops-lib)
+      # - name: Lint with shared action
+      #   uses: <org>/devops-training-iac-devops/.github/actions/devops-lib@<ref>
+      #   with:
+      #     ci_image: python-ci-tools:${{ github.run_id }}
+      #     command: |
+      #       pip install -r requirements.txt flake8 mypy
+      #       make lint
+
+  cd:
+    needs: ci
+    # [E8] TODO: condition by RUN_CD or branch (develop/master)
+    if: false
+    # Nota importante:
+    # - Solucion correcta (real): CD debe usar la imagen publicada en el registry (docker pull).
+    # - En runners GitHub-hosted no hay acceso a tu registry local, por eso se "simula" con build local.
+    # - Esto hace CI y CD asincronos, pero el deploy consume una imagen local reconstruida.
+    # - Si usas self-hosted con acceso al registry, cambia el build por pull + compose usando esa imagen.
+    # [E5] TODO: select environment by branch
+    # environment: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # [E6] TODO: set deploy vars
+      - name: Set deploy vars (TODO)
+        run: |
+          # Example:
+          # echo "IMAGE_VERSION=$(cat VERSION)" >> $GITHUB_ENV
+          # echo "IMAGE_NAME=${IMAGE_REPO}:$(cat VERSION)" >> $GITHUB_ENV
+          # if [ "${GITHUB_REF_NAME}" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+          # echo "DEPLOY_ENV=${DEPLOY_ENV}" >> $GITHUB_ENV
+          # echo "COMPOSE_PROJECT=$(echo ${DEPLOY_ENV} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "TODO: set deploy vars"
+
+      # [E6] TODO: ensure image exists in this job
+      - name: Build app image (TODO)
+        run: |
+          # Example:
+          # docker build -t "${IMAGE_NAME}" -f devops/Dockerfile .
+          echo "TODO: docker build app image"
+
+      # [E9] TODO: compose up -> logs
+      - name: CD - Compose up (TODO)
+        run: |
+          # Example:
+          # docker compose -p "${COMPOSE_PROJECT}" up -d
+          # sleep 5
+          # docker compose -p "${COMPOSE_PROJECT}" logs "${COMPOSE_SERVICE}"
+          echo "TODO: compose up + logs"
+
+      # [E9] TODO: cleanup always
+      - name: CD - Cleanup (TODO)
+        if: always()
+        run: |
+          # Example:
+          # docker compose -p "${COMPOSE_PROJECT}" down --volumes
+          echo "TODO: cleanup"

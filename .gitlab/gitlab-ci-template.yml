@@ -11,42 +11,53 @@ stages:
   - cd
 
 variables:
-  # TODO (E2): Variables globales:
-  # IMAGE_NAME: "contrerasadr/devops-training-python-app:0.0.1"
-  # APP_URL: "http://localhost:5001/"
+  # TODO (E2): Variables globales (recomendado: en GitLab CI/CD Variables)
+  # IMAGE_REPO: "contrerasadr/devops-training-python-app"
+  # REGISTRY_HOST: "local-registry:5000"
+  # REGISTRY_REPO: "contrerasadr/devops-training-python-app"
+  # COMPOSE_FILE: "docker-compose.yml"
+  # COMPOSE_SERVICE: "app"
+  # ENABLE_REGISTRY_PUSH: "true"
+  # RUN_CD: "true"
 
-ci:tests:
-  stage: ci
-  # TODO (E3): Ejecutar CI en contenedor:
-  # image: python:3.6-slim
-  script:
-    - echo "TODO: pip install -r requirements.txt"
-    - echo "TODO: pytest -q"
-
-ci:build-image:
+ci:build:
   stage: ci
   image: docker:27
   services:
-    # TODO (E4): Docker-in-Docker si el runner lo necesita
     - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   script:
+    - echo "TODO: build CI image (devops/ci.Dockerfile)"
+    - echo "TODO: run lint inside CI image"
+    - echo "TODO: run tests inside CI image"
     - echo "TODO: docker build -t $IMAGE_NAME -f devops/Dockerfile ."
+    - echo "TODO: optional push to registry"
 
 cd:deploy:
   stage: cd
   image: docker:27
   services:
     - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   rules:
-    # TODO (E5): Ejecutar solo en develop/master
+    # TODO (E5): Ejecutar si RUN_CD == "true" o rama develop/master
+    - if: '$RUN_CD == "true"'
+      when: on_success
     - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
       when: on_success
     - when: never
+  # TODO (E5): environment dinamico (master=PRO, resto=DEV)
+  # environment:
+  #   name: $ENV_NAME
   script:
+    # Nota: en runner GitLab shared no hay registry local, se simula con build local.
     - echo "TODO: docker compose up -d"
-    - echo "TODO: curl -fsS $APP_URL"
+    - echo "TODO: docker compose logs $COMPOSE_SERVICE"
   after_script:
     # TODO (E6): Cleanup garantizado
     - echo "TODO: docker compose down --volumes || true"
     - echo "TODO: docker rmi $IMAGE_NAME || true"
-

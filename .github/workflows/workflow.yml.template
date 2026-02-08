@@ -1,0 +1,39 @@
+name: "CI/CD Template"
+
+on:
+  push:
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch:
+    inputs:
+      RUN_CD:
+        description: "Run CD stage"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  ci:
+    # TODO (E5): selecciona environment segun rama
+    # environment: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}
+    runs-on: ubuntu-latest
+    steps:
+      # TODO: Ej.2 - checkout + info
+      - uses: actions/checkout@v4
+      - name: Info
+        run: |
+          echo "branch=${GITHUB_REF_NAME}"
+          echo "sha=${GITHUB_SHA}"
+
+      # TODO: Ej.6 - lint/test en contenedor (ci.Dockerfile)
+      # TODO: Ej.7 - build imagen
+
+  cd:
+    needs: ci
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.RUN_CD == true || github.ref_name == 'develop' || github.ref_name == 'master' }}
+    # TODO (E5): selecciona environment segun rama
+    # environment: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: Ej.9 - docker compose up -> logs -> down (always)

@@ -1,0 +1,87 @@
+## Práctica 4 - GitLab CI/CD (template full)
+##
+## Este fichero NO contiene la solución final.
+## Es una guía con ejemplos comentados para completar el pipeline.
+## Referencias:
+## - YAML: https://docs.gitlab.com/ee/ci/yaml/
+## - Rules: https://docs.gitlab.com/ee/ci/yaml/#rules
+## - Variables: https://docs.gitlab.com/ee/ci/variables/
+## - Docker build: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+
+stages:
+  - ci
+  - cd
+
+variables:
+  # TODO (E2): Variables globales (en GitLab CI/CD Variables)
+  # IMAGE_REPO: "contrerasadr/devops-training-python-app"
+  # REGISTRY_HOST: "local-registry:5000"
+  # REGISTRY_REPO: "contrerasadr/devops-training-python-app"
+  # COMPOSE_FILE: "docker-compose.yml"
+  # COMPOSE_SERVICE: "app"
+  # ENABLE_REGISTRY_PUSH: "true"
+  # RUN_CD: "true"
+
+ci:build:
+  stage: ci
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    # [E3] Build CI image
+    # docker build -t "${CI_IMAGE}" -f devops/ci.Dockerfile .
+    # [E3] Lint
+    # docker run --rm -v "$CI_PROJECT_DIR:/app" -w /app "${CI_IMAGE}" sh -lc \
+    #   "pip install -r requirements.txt flake8 mypy && make lint"
+    # [E3] Test
+    # docker run --rm -v "$CI_PROJECT_DIR:/app" -w /app "${CI_IMAGE}" sh -lc \
+    #   "pip install -r requirements.txt && pytest -q"
+    # [E4] Build app image
+    # docker build -t "$IMAGE_NAME" -f devops/Dockerfile .
+    # [Opcional A] Push image to registry
+    # if [ "$ENABLE_REGISTRY_PUSH" = "true" ]; then ... fi
+    - echo "TODO: implement CI steps"
+
+cd:deploy:
+  stage: cd
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  rules:
+    # [E5] RUN_CD manual or develop/master
+    - if: '$RUN_CD == "true"'
+      variables:
+        ENV_NAME: "DEV"
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      variables:
+        ENV_NAME: "PRO"
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      variables:
+        ENV_NAME: "DEV"
+      when: on_success
+    - when: never
+  # [E5] Select environment by branch (master=PRO, resto=DEV)
+  environment:
+    name: $ENV_NAME
+  script:
+    # Nota importante:
+    # - Solucion correcta: usar la imagen del registry (docker pull).
+    # - En runners GitLab shared se simula con build local.
+    # [E6] Compose up + logs
+    # docker compose up -d
+    # sleep 5
+    # docker compose logs "$COMPOSE_SERVICE"
+    - echo "TODO: deploy and show logs"
+  after_script:
+    # [E6] Cleanup always
+    # docker compose down --volumes || true
+    # docker rmi "$IMAGE_NAME" || true
+    - echo "TODO: cleanup"
