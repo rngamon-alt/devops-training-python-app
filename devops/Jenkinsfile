@@ -1,0 +1,125 @@
+def runInDocker(String image, Closure body) {
+  docker.image(image).inside {
+    body()
+  }
+}
+
+def composeUpTestDown(Map args = [:]) {
+  try {
+    sh args.up
+    sh args.test
+  } finally {
+    sh "${args.down} || true"
+  }
+}
+
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  parameters {
+    booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD (solo develop/master)')
+    booleanParam(name: 'ENABLE_REGISTRY_PUSH', defaultValue: false, description: 'Publicar imagen en local-registry')
+  }
+
+  environment {
+    IMAGE_NAME = 'contrerasadr/devops-training-2025-python-app:0.0.1'
+    APP_URL = 'http://localhost:5001/'
+    REGISTRY = 'local-registry:5000'
+    REGISTRY_REPO = 'devops-training-2025-python-app'
+    REGISTRY_CREDS_ID = 'local-registry-creds'
+  }
+
+  stages {
+    stage('Info') {
+      steps {
+        echo "Job: ${env.JOB_NAME}"
+        echo "Build: ${env.BUILD_NUMBER}"
+        echo "Branch: ${env.BRANCH_NAME}"
+      }
+    }
+
+    stage('CI - Test') {
+      steps {
+        script {
+          runInDocker('python:3.6-slim') {
+            sh 'python --version'
+            sh 'pip install -r requirements.txt'
+            sh 'pytest -q'
+          }
+        }
+      }
+    }
+
+    stage('CI - Build image') {
+      steps {
+        script {
+          docker.build(env.IMAGE_NAME, '-f devops/Dockerfile .')
+        }
+      }
+    }
+
+    stage('CI - Push image (opcional)') {
+      when {
+        expression { return params.ENABLE_REGISTRY_PUSH }
+      }
+      steps {
+        script {
+          String registryImage = "${env.REGISTRY}/${env.REGISTRY_REPO}:${env.BUILD_NUMBER}"
+          withCredentials([usernamePassword(
+            credentialsId: env.REGISTRY_CREDS_ID,
+            usernameVariable: 'REG_USER',
+            passwordVariable: 'REG_PASS'
+          )]) {
+            sh """
+              echo "\$REG_PASS" | docker login ${env.REGISTRY} -u "\$REG_USER" --password-stdin
+              docker tag ${env.IMAGE_NAME} ${registryImage}
+              docker push ${registryImage}
+            """
+          }
+        }
+      }
+    }
+
+    stage('CD') {
+      when {
+        allOf {
+          anyOf {
+            branch 'develop'
+            branch 'master'
+          }
+          expression { return params.RUN_CD }
+        }
+      }
+      steps {
+        script {
+          env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV'
+          env.COMPOSE_PROJECT = env.DEPLOY_ENV.toLowerCase()
+          echo "Deploying to ${env.DEPLOY_ENV}"
+
+          composeUpTestDown(
+            up: "docker compose -p ${env.COMPOSE_PROJECT} up -d",
+            test: "sleep 5 && curl -fsS ${env.APP_URL}",
+            down: "docker compose -p ${env.COMPOSE_PROJECT} down --volumes"
+          )
+        }
+      }
+      post {
+        always {
+          sh "docker rmi ${env.IMAGE_NAME} || true"
+        }
+        success {
+          echo 'SUCCESS'
+        }
+        failure {
+          echo 'FAILURE'
+          sh 'docker compose logs || true'
+        }
+      }
+    }
+  }
+}
