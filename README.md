@@ -1,4 +1,4 @@
-# DevOps Training 2025 - App Python
+# DevOps Training - App Python
 
 Repositorio de la aplicación Python usada en el curso para practicar estrategias DevOps de CI/CD en proyectos de lenguaje interpretado.
 
@@ -9,9 +9,9 @@ Repositorio de la aplicación Python usada en el curso para practicar estrategia
 - Este README se actualizará de forma incremental durante el curso.
 
 ## Repositorios y ramas
-- App Python (base `feat/base`): https://github.com/contreras-adr/devops-training-2025-python-app/tree/feat/base
-- App Java (base `feat/base`): https://github.com/contreras-adr/devops-training-2025-java-app/tree/feat/base
-- IaC/DevOps (base `feat/base`): https://github.com/contreras-adr/devops-training-2025-iac-devops/tree/feat/base
+- App Python (base `feat/base`): https://github.com/contreras-adr/devops-training-python-app/tree/feat/base
+- App Java (base `feat/base`): https://github.com/contreras-adr/devops-training-java-app/tree/feat/base
+- IaC/DevOps (base `feat/base`): https://github.com/contreras-adr/devops-training-iac-devops/tree/feat/base
 
 ## Propósito del repositorio
 - App Python simple con soporte de contenedores.
@@ -39,6 +39,23 @@ docker logs app1
 
 ### Ejecutar BBDD y app con Docker Compose
 ```bash
-docker-compose up -d
+docker compose up -d
 curl localhost:5001
+```
+
+### Ejecutar lint y tests manualmente con `docker run`
+Desde la raiz del repo:
+
+```bash
+# Lint (flake8 + black + mypy)
+docker run --rm -v "$PWD":/app -w /app python:3.11-slim sh -lc \
+  "pip install -r requirements.txt flake8 mypy && make lint"
+
+# Tests (incluye lint porque `make test` depende de `make lint`)
+docker run --rm -v "$PWD":/app -w /app python:3.11-slim sh -lc \
+  "pip install -r requirements.txt flake8 mypy && make test"
+```
+### Limpiar entorno
+```bash
+docker compose down -v
 ```
