@@ -1,0 +1,177 @@
+/*
+  Práctica 2 - Jenkinsfile template full (V2)
+
+  Esta plantilla NO contiene la solución final copiable.
+  Es una versión 2 que incluye ejercicios opcionales y se considera
+  una refactorización de la versión 1 una vez esté operativa.
+
+  Objetivo:
+  - Guiar al alumno para completar el pipeline por bloques.
+  - Mantener referencias a ejercicios del enunciado.
+*/
+
+// [E12] TODO: descomenta la importación cuando configures la librería en Jenkins
+// @Library('iac-devops-lib') _
+
+pipeline {
+  agent any
+
+  options {
+    // [E1] TODO: habilita prácticas recomendadas.
+    // Ejemplo:
+    // timestamps()
+    // disableConcurrentBuilds()
+  }
+
+  parameters {
+    // [E6.3] TODO: añade parámetro para habilitar CD.
+    // Ejemplo:
+    // booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD')
+
+    // [E7] TODO: añade parámetro para push al registry.
+    // Ejemplo:
+    // booleanParam(name: 'ENABLE_REGISTRY_PUSH', defaultValue: false, description: 'Publicar imagen en local-registry')
+
+    // [E7/E12] TODO: añade parámetro para forzar uso de imagen del registry en CD.
+    // Ejemplo:
+    // booleanParam(name: 'USE_REGISTRY_IMAGE_IN_CD', defaultValue: true, description: 'Usar imagen del registry en CD')
+  }
+
+  environment {
+    // [E6.4] TODO: define variables compartidas del pipeline.
+    // APP_URL = 'http://localhost:5001/'
+    // COMPOSE_FILE = 'docker-compose.yml'
+    // COMPOSE_SERVICE = 'app'
+    // PYTHON_TEST_IMAGE = 'python:3.6-slim'
+
+    // [E5] TODO: define repositorio local de imagen.
+    // IMAGE_REPO_LOCAL = 'contrerasadr/devops-training-python-app'
+
+    // [E7] TODO: define host/repo de registry y credencial Jenkins.
+    // REGISTRY_HOST = 'local-registry:5000'
+    // REGISTRY_REPO = 'contrerasadr/devops-training-python-app'
+    // REGISTRY_CREDS_ID = 'local-registry-creds'
+  }
+
+  stages {
+    stage('Info') {
+      steps {
+        // [E1] TODO: imprime metadatos de ejecución.
+        // Ejemplo:
+        // echo "Job: ${env.JOB_NAME}"
+        // echo "Build: ${env.BUILD_NUMBER}"
+        // echo "Branch: ${env.BRANCH_NAME}"
+      }
+    }
+
+    stage('Init - Versionado') {
+      steps {
+        script {
+          // [E12] TODO: leer VERSION y construir tags de imagen local/registry.
+          // Ejemplo:
+          // env.IMAGE_VERSION = devopsLib.readVersion('VERSION')
+          // env.IMAGE_LOCAL = "${env.IMAGE_REPO_LOCAL}:${env.IMAGE_VERSION}"
+          // env.IMAGE_REGISTRY = "${env.REGISTRY_HOST}/${env.REGISTRY_REPO}:${env.IMAGE_VERSION}"
+        }
+      }
+    }
+
+    stage('CI - Test') {
+      steps {
+        script {
+          // [E2][E4][E12] TODO: ejecutar tests en contenedor vía librería centralizada.
+          // Ejemplo:
+          // devopsLib.runInDocker(env.PYTHON_TEST_IMAGE) {
+          //   sh 'python --version'
+          //   sh 'pip install -r requirements.txt'
+          //   sh 'pytest -q'
+          // }
+        }
+      }
+    }
+
+    stage('CI - Build image') {
+      steps {
+        script {
+          // [E5] TODO: construir imagen Docker.
+          // Ejemplo:
+          // docker.build(env.IMAGE_LOCAL, '-f devops/Dockerfile .')
+        }
+      }
+    }
+
+    stage('CI - Push image (opcional)') {
+      when {
+        // [E7] TODO: ejecuta solo si se habilita el parámetro.
+        // Ejemplo:
+        // expression { return params.ENABLE_REGISTRY_PUSH }
+      }
+      steps {
+        script {
+          // [E7] TODO: login + tag + push al registry con credenciales.
+          // Ejemplo:
+          // withCredentials([usernamePassword(...)]) {
+          //   sh '''
+          //     echo "$REG_PASS" | docker login ...
+          //     docker tag "$IMAGE_LOCAL" "$IMAGE_REGISTRY"
+          //     docker push "$IMAGE_REGISTRY"
+          //   '''
+          // }
+        }
+      }
+    }
+
+    stage('CD') {
+      when {
+        // [E6.1][E6.3] TODO: ejecutar CD por rama o parámetro.
+        // - Si RUN_CD=true, ejecutar en cualquier rama.
+        // - Si RUN_CD=false, ejecutar solo en develop/master.
+        // Ejemplo:
+        // anyOf {
+        //   expression { return params.RUN_CD }
+        //   branch 'develop'
+        //   branch 'master'
+        // }
+      }
+      steps {
+        script {
+          // [E6.2] TODO: calcular DEPLOY_ENV y COMPOSE_PROJECT.
+          // Ejemplo:
+          // env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV'
+          // env.COMPOSE_PROJECT = env.DEPLOY_ENV.toLowerCase()
+
+          // [E7/E12] TODO: elegir imagen para CD (registry o local).
+          // Ejemplo:
+          // String cdImage = params.USE_REGISTRY_IMAGE_IN_CD ? env.IMAGE_REGISTRY : env.IMAGE_LOCAL
+
+          // [E7] TODO: si usas imagen de registry, hacer login + pull.
+
+          // [E12] TODO: actualizar la imagen del servicio en docker-compose.yml.
+          // Ejemplo:
+          // devopsLib.setComposeServiceImage(
+          //   composeFile: env.COMPOSE_FILE,
+          //   serviceName: env.COMPOSE_SERVICE,
+          //   image: cdImage
+          // )
+
+          // [E6][E6.5][E12] TODO: ejecutar up -> test -> down con cleanup garantizado.
+          // Ejemplo:
+          // devopsLib.composeUpTestDown(
+          //   up: "docker compose -p ${env.COMPOSE_PROJECT} up -d",
+          //   test: "sleep 5 && curl -fsS ${env.APP_URL}",
+          //   down: "docker compose -p ${env.COMPOSE_PROJECT} down --volumes"
+          // )
+        }
+      }
+      post {
+        // [E6.5] TODO: añade limpieza y reporting.
+        // always { sh "docker rmi ${env.IMAGE_LOCAL} || true" }
+        // success { echo 'SUCCESS' }
+        // failure {
+        //   echo 'FAILURE'
+        //   sh "docker compose -p ${env.COMPOSE_PROJECT} logs || true"
+        // }
+      }
+    }
+  }
+}
