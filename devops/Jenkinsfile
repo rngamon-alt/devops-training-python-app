@@ -1,17 +1,14 @@
-def runInDocker(String image, Closure body) {
-  docker.image(image).inside {
-    body()
-  }
-}
+@Library('iac-devops-lib') _
 
-def composeUpTestDown(Map args = [:]) {
-  try {
-    sh args.up
-    sh args.test
-  } finally {
-    sh "${args.down} || true"
-  }
-}
+/*
+  Import de libreria compartida en Jenkins:
+  1) Manage Jenkins -> System -> Global Trusted Pipeline Libraries.
+  2) Name: iac-devops-lib
+  3) Default version: feat/base (o la rama que corresponda).
+  4) Retrieval method: Modern SCM -> Git
+     URL: https://github.com/contreras-adr/devops-training-iac-devops.git
+  5) Library Path: groovy
+*/
 
 pipeline {
   agent any
@@ -27,10 +24,12 @@ pipeline {
   }
 
   environment {
-    IMAGE_NAME = 'contrerasadr/devops-training-2025-python-app:0.0.1'
+    IMAGE_REPO = 'contrerasadr/devops-training-2025-python-app'
     APP_URL = 'http://localhost:5001/'
+    COMPOSE_FILE = 'docker-compose.yml'
+    COMPOSE_SERVICE = 'app'
     REGISTRY = 'local-registry:5000'
-    REGISTRY_REPO = 'devops-training-2025-python-app'
+    REGISTRY_REPO = 'contrerasadr/devops-training-2025-python-app'
     REGISTRY_CREDS_ID = 'local-registry-creds'
   }
 
@@ -43,10 +42,20 @@ pipeline {
       }
     }
 
+    stage('Init - Versionado') {
+      steps {
+        script {
+          env.IMAGE_VERSION = devopsLib.readVersion('VERSION')
+          env.IMAGE_NAME = "${env.IMAGE_REPO}:${env.IMAGE_VERSION}"
+          echo "Imagen seleccionada: ${env.IMAGE_NAME}"
+        }
+      }
+    }
+
     stage('CI - Test') {
       steps {
         script {
-          runInDocker('python:3.6-slim') {
+          devopsLib.runInDocker('python:3.6-slim') {
             sh 'python --version'
             sh 'pip install -r requirements.txt'
             sh 'pytest -q'
@@ -69,7 +78,7 @@ pipeline {
       }
       steps {
         script {
-          String registryImage = "${env.REGISTRY}/${env.REGISTRY_REPO}:${env.BUILD_NUMBER}"
+          String registryImage = "${env.REGISTRY}/${env.REGISTRY_REPO}:${env.IMAGE_VERSION}"
           withCredentials([usernamePassword(
             credentialsId: env.REGISTRY_CREDS_ID,
             usernameVariable: 'REG_USER',
@@ -101,7 +110,13 @@ pipeline {
           env.COMPOSE_PROJECT = env.DEPLOY_ENV.toLowerCase()
           echo "Deploying to ${env.DEPLOY_ENV}"
 
-          composeUpTestDown(
+          devopsLib.setComposeServiceImage(
+            composeFile: env.COMPOSE_FILE,
+            serviceName: env.COMPOSE_SERVICE,
+            image: env.IMAGE_NAME
+          )
+
+          devopsLib.composeUpTestDown(
             up: "docker compose -p ${env.COMPOSE_PROJECT} up -d",
             test: "sleep 5 && curl -fsS ${env.APP_URL}",
             down: "docker compose -p ${env.COMPOSE_PROJECT} down --volumes"
@@ -117,7 +132,7 @@ pipeline {
         }
         failure {
           echo 'FAILURE'
-          sh 'docker compose logs || true'
+          sh "docker compose -p ${env.COMPOSE_PROJECT} logs || true"
         }
       }
     }

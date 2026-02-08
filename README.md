@@ -39,6 +39,23 @@ docker logs app1
 
 ### Ejecutar BBDD y app con Docker Compose
 ```bash
-docker-compose up -d
+docker compose up -d
 curl localhost:5001
+```
+
+### Ejecutar lint y tests manualmente con `docker run`
+Desde la raiz del repo:
+
+```bash
+# Lint (flake8 + black + mypy)
+docker run --rm -v "$PWD":/app -w /app python:3.11-slim sh -lc \
+  "pip install -r requirements.txt flake8 mypy && make lint"
+
+# Tests (incluye lint porque `make test` depende de `make lint`)
+docker run --rm -v "$PWD":/app -w /app python:3.11-slim sh -lc \
+  "pip install -r requirements.txt flake8 mypy && make test"
+```
+### Limpiar entorno
+```bash
+docker compose down -v
 ```

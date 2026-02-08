@@ -3,9 +3,9 @@ version: "3.7"
 services:
   app:
     image: contrerasadr/devops-training-python-app:0.0.1
-    # build: 
-    #   context: .
-    #   dockerfile: devops/Dockerfile
+    #build: 
+    #  context: .
+    #  dockerfile: devops/Dockerfile
     container_name: my-flask-app-dc
     restart: unless-stopped
     networks:
