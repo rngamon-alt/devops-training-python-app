@@ -7,7 +7,8 @@
   3) Default version: feat/base (o la rama que corresponda).
   4) Retrieval method: Modern SCM -> Git
      URL: https://github.com/contreras-adr/devops-training-iac-devops.git
-  5) Library Path: groovy
+  5) Library Path:
+     - `groovy` si usas `groovy/vars/devopsLib.groovy`
 */
 
 pipeline {
@@ -19,17 +20,17 @@ pipeline {
   }
 
   parameters {
-    booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD (solo develop/master)')
+    booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD')
     booleanParam(name: 'ENABLE_REGISTRY_PUSH', defaultValue: false, description: 'Publicar imagen en local-registry')
   }
 
   environment {
-    IMAGE_REPO = 'contrerasadr/devops-training-2025-python-app'
+    IMAGE_REPO = 'contrerasadr/devops-training-python-app'
     APP_URL = 'http://localhost:5001/'
     COMPOSE_FILE = 'docker-compose.yml'
     COMPOSE_SERVICE = 'app'
     REGISTRY = 'local-registry:5000'
-    REGISTRY_REPO = 'contrerasadr/devops-training-2025-python-app'
+    REGISTRY_REPO = 'contrerasadr/devops-training-python-app'
     REGISTRY_CREDS_ID = 'local-registry-creds'
   }
 
@@ -96,12 +97,10 @@ pipeline {
 
     stage('CD') {
       when {
-        allOf {
-          anyOf {
-            branch 'develop'
-            branch 'master'
-          }
+        anyOf {
           expression { return params.RUN_CD }
+          branch 'develop'
+          branch 'master'
         }
       }
       steps {

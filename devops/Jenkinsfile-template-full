@@ -26,7 +26,7 @@ pipeline {
   parameters {
     // [E6.3] TODO: añade parámetro para habilitar CD.
     // Ejemplo:
-    // booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD (solo develop/master)')
+    // booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD')
 
     // [E7] TODO: añade parámetro para push al registry.
     // Ejemplo:
@@ -45,11 +45,11 @@ pipeline {
     // PYTHON_TEST_IMAGE = 'python:3.6-slim'
 
     // [E5] TODO: define repositorio local de imagen.
-    // IMAGE_REPO_LOCAL = 'contrerasadr/devops-training-2025-python-app'
+    // IMAGE_REPO_LOCAL = 'contrerasadr/devops-training-python-app'
 
     // [E7] TODO: define host/repo de registry y credencial Jenkins.
     // REGISTRY_HOST = 'local-registry:5000'
-    // REGISTRY_REPO = 'contrerasadr/devops-training-2025-python-app'
+    // REGISTRY_REPO = 'contrerasadr/devops-training-python-app'
     // REGISTRY_CREDS_ID = 'local-registry-creds'
   }
 
@@ -123,13 +123,15 @@ pipeline {
 
     stage('CD') {
       when {
-        allOf {
-          // [E6.1] TODO: permitir CD solo en develop/master.
-          // anyOf { branch 'develop'; branch 'master' }
-
-          // [E6.3] TODO: condicionar por parámetro RUN_CD.
-          // expression { return params.RUN_CD }
-        }
+        // [E6.1][E6.3] TODO: ejecutar CD por rama o parámetro.
+        // - Si RUN_CD=true, ejecutar en cualquier rama.
+        // - Si RUN_CD=false, ejecutar solo en develop/master.
+        // Ejemplo:
+        // anyOf {
+        //   expression { return params.RUN_CD }
+        //   branch 'develop'
+        //   branch 'master'
+        // }
       }
       steps {
         script {
