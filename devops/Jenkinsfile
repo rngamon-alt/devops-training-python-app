@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     stages {
-        stage('Hello develop') {
+        stage('Ejercicio 1') {
             steps {
-                echo 'Hello World from develop branch!'
+                echo "Job: ${env.JOB_NAME}"
+                echo "Branch: ${env.BRANCH_NAME}"
             }
         }
     }
