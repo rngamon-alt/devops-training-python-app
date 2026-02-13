@@ -1,7 +1,11 @@
 pipeline {
 
-    agent { dockerfile true }
-    stages {
+agent {
+        dockerfile {
+            // indicar que el archivo está dentro de la carpeta 'devops'
+            dir 'devops' 
+        }
+    }    stages {
        stage('Test') {
             
             steps {
