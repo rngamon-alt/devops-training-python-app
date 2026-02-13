@@ -1,12 +1,13 @@
-## Práctica 4 - GitLab CI/CD (template full)
+## Práctica 4 - GitLab CI/CD (template full - SaaS)
 ##
 ## Este fichero NO contiene la solución final.
 ## Es una guía con ejemplos comentados para completar el pipeline.
+## En este template se usan servicios nativos de GitLab (Container Registry).
 ## Referencias:
 ## - YAML: https://docs.gitlab.com/ee/ci/yaml/
 ## - Rules: https://docs.gitlab.com/ee/ci/yaml/#rules
 ## - Variables: https://docs.gitlab.com/ee/ci/variables/
-## - Docker build: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+## - Container Registry: https://docs.gitlab.com/ee/user/packages/container_registry/
 
 stages:
   - ci
@@ -15,8 +16,6 @@ stages:
 variables:
   # TODO (E2): Variables globales (en GitLab CI/CD Variables)
   # IMAGE_REPO: "contrerasadr/devops-training-python-app"
-  # REGISTRY_HOST: "local-registry:5000"
-  # REGISTRY_REPO: "contrerasadr/devops-training-python-app"
   # COMPOSE_FILE: "docker-compose.yml"
   # COMPOSE_SERVICE: "app"
   # ENABLE_REGISTRY_PUSH: "true"
@@ -41,9 +40,11 @@ ci:build:
     #   "pip install -r requirements.txt && pytest -q"
     # [E4] Build app image
     # docker build -t "$IMAGE_NAME" -f devops/Dockerfile .
-    # [Opcional A] Push image to registry
-    # if [ "$ENABLE_REGISTRY_PUSH" = "true" ]; then ... fi
-    - echo "TODO: implement CI steps"
+    # [Opcional D] Push to GitLab Container Registry
+    # docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    # docker tag "$IMAGE_NAME" "$CI_REGISTRY_IMAGE:$IMAGE_VERSION"
+    # docker push "$CI_REGISTRY_IMAGE:$IMAGE_VERSION"
+    - echo "TODO: implement CI steps (SaaS registry)"
 
 cd:deploy:
   stage: cd
@@ -68,20 +69,12 @@ cd:deploy:
         ENV_NAME: "DEV"
       when: on_success
     - when: never
-  # [E5] Select environment by branch (master=PRO, resto=DEV)
   environment:
     name: $ENV_NAME
   script:
-    # Nota importante:
-    # - Solucion correcta: usar la imagen del registry (docker pull).
-    # - En runners GitLab shared se simula con build local.
-    # [E6] Compose up + logs
-    # docker compose up -d
-    # sleep 5
-    # docker compose logs "$COMPOSE_SERVICE"
-    - echo "TODO: deploy and show logs"
+    # Nota:
+    # - En SaaS usa GitLab Container Registry (docker pull).
+    # - Retag local para que docker compose use la imagen.
+    - echo "TODO: docker login + pull + tag + compose up + logs"
   after_script:
-    # [E6] Cleanup always
-    # docker compose down --volumes || true
-    # docker rmi "$IMAGE_NAME" || true
     - echo "TODO: cleanup"

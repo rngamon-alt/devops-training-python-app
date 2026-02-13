@@ -1,0 +1,115 @@
+# Práctica 5 - Azure DevOps (template full SaaS)
+#
+# Este template es una guía (NO solución final).
+# Escenario SaaS:
+# - Docker Hub para imágenes
+# - Artifactory opcional (solo Java en este curso)
+# - Agente Microsoft-hosted (ubuntu-latest)
+
+trigger:
+  branches:
+    include:
+      - "*"
+
+pr:
+  branches:
+    include:
+      - develop
+      - master
+
+parameters:
+  - name: RUN_CD
+    type: boolean
+    default: false
+  - name: ENABLE_REGISTRY_PUSH
+    type: boolean
+    default: true
+
+variables:
+  # TODO (E2): mueve estas variables a Variable Group en Azure DevOps
+  - name: IMAGE_REPO
+    value: "contrerasadr/devops-training-python-app"
+  - name: DOCKERHUB_REPO
+    value: "contrerasadr/devops-training-python-app"
+  - name: COMPOSE_FILE
+    value: "docker-compose.yml"
+  - name: COMPOSE_SERVICE
+    value: "app"
+
+stages:
+  - stage: CI
+    displayName: "CI - Lint/Test/Build"
+    jobs:
+      - job: ci_build
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              CI_IMAGE="python-ci-tools:$(Build.BuildId)"
+              REGISTRY_IMAGE="$(DOCKERHUB_REPO):${IMAGE_VERSION}"
+
+              echo "TODO (E3): docker build -t ${CI_IMAGE} -f devops/ci.Dockerfile ."
+              echo "TODO (E3): docker run --rm ... ${CI_IMAGE} sh -lc 'make lint'"
+              echo "TODO (E3): docker run --rm ... ${CI_IMAGE} sh -lc 'make test'"
+              echo "TODO (E4): docker build -t ${IMAGE_NAME} -f devops/Dockerfile ."
+
+              echo "TODO (Opcional A): si ENABLE_REGISTRY_PUSH=true"
+              echo "  docker login -u \$DOCKERHUB_USERNAME -p \$DOCKERHUB_PASSWORD"
+              echo "  docker tag ${IMAGE_NAME} ${REGISTRY_IMAGE}"
+              echo "  docker push ${REGISTRY_IMAGE}"
+            displayName: "CI steps (TODO)"
+
+  - stage: CD
+    displayName: "CD - Deploy compose"
+    dependsOn: CI
+    condition: and(
+      succeeded(),
+      or(
+        eq(${{ parameters.RUN_CD }}, true),
+        eq(variables['Build.SourceBranchName'], 'develop'),
+        eq(variables['Build.SourceBranchName'], 'master')
+      )
+    )
+    jobs:
+      - job: cd_deploy
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              REGISTRY_IMAGE="$(DOCKERHUB_REPO):${IMAGE_VERSION}"
+
+              if [ "$(Build.SourceBranchName)" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+              COMPOSE_PROJECT=$(echo "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')
+
+              echo "TODO (E6): estrategia CD"
+              echo "- Si hay push al registry: pull + tag local para usar ${IMAGE_NAME}"
+              echo "- Si NO hay push: fallback build local (runner hosted sin acceso on-prem)"
+              echo "Ejemplo:"
+              echo "  docker login -u \$DOCKERHUB_USERNAME -p \$DOCKERHUB_PASSWORD"
+              echo "  docker pull ${REGISTRY_IMAGE}"
+              echo "  docker tag ${REGISTRY_IMAGE} ${IMAGE_NAME}"
+
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} up -d"
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} logs $(COMPOSE_SERVICE)"
+            displayName: "Deploy (TODO)"
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              if [ "$(Build.SourceBranchName)" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+              COMPOSE_PROJECT=$(echo "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')
+
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} down --volumes || true"
+              echo "TODO (E6): docker rmi ${IMAGE_NAME} || true"
+            displayName: "Cleanup (TODO)"
+            condition: always()
+
+# Referencias:
+# - Docker task/login: https://learn.microsoft.com/azure/devops/pipelines/tasks/reference/docker-v2
+# - Variables/secretos: https://learn.microsoft.com/azure/devops/pipelines/process/variables
+# - Conditions: https://learn.microsoft.com/azure/devops/pipelines/process/conditions

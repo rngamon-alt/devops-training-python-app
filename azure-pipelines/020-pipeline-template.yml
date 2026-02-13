@@ -1,0 +1,92 @@
+# Práctica 5 - Azure DevOps Pipelines (template guía)
+#
+# Este fichero NO contiene la solución final.
+# Usa este template para completar Ejercicios 1-6.
+# Para versión extendida por escenario, revisa:
+# - azure-pipelines/030-pipeline-template-full-saas.yml
+# - azure-pipelines/040-pipeline-template-full-local.yml
+
+trigger:
+  # TODO (E1): CI en cualquier rama
+  branches:
+    include: []
+
+pr:
+  # TODO (E1): PR sobre develop/master
+  branches:
+    include: []
+
+parameters:
+  # TODO (E2): activa CD manualmente cuando quieras
+  - name: RUN_CD
+    type: boolean
+    default: false
+
+variables:
+  # TODO (E2): centraliza variables en Variable Group y/o variables del pipeline
+  # - group: devops-python-shared
+  - name: IMAGE_REPO
+    value: "contrerasadr/devops-training-python-app"
+  - name: COMPOSE_FILE
+    value: "docker-compose.yml"
+  - name: COMPOSE_SERVICE
+    value: "app"
+
+stages:
+  - stage: CI
+    displayName: "CI"
+    jobs:
+      - job: ci_build
+        displayName: "Lint, test y build imagen"
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              CI_IMAGE="python-ci-tools:$(Build.BuildId)"
+              echo "TODO (E3): docker build -t ${CI_IMAGE} -f devops/ci.Dockerfile ."
+              echo "TODO (E3): docker run ... ${CI_IMAGE} make lint"
+              echo "TODO (E3): docker run ... ${CI_IMAGE} make test"
+              echo "TODO (E4): docker build -t ${IMAGE_NAME} -f devops/Dockerfile ."
+            displayName: "CI steps (TODO)"
+
+  - stage: CD
+    displayName: "CD"
+    dependsOn: CI
+    # TODO (E5):
+    # Ejecutar CD si RUN_CD=true o si rama=develop/master
+    condition: and(
+      succeeded(),
+      or(
+        eq(${{ parameters.RUN_CD }}, true),
+        eq(variables['Build.SourceBranchName'], 'develop'),
+        eq(variables['Build.SourceBranchName'], 'master')
+      )
+    )
+    jobs:
+      - job: cd_deploy
+        displayName: "Deploy con compose (logs + cleanup)"
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+          - script: |
+              if [ "$(Build.SourceBranchName)" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+              COMPOSE_PROJECT=$(echo "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} up -d"
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} logs $(COMPOSE_SERVICE)"
+            displayName: "CD steps (TODO)"
+          - script: |
+              if [ "$(Build.SourceBranchName)" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+              COMPOSE_PROJECT=$(echo "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} down --volumes || true"
+              echo "TODO (E6): docker rmi <image> || true"
+            displayName: "Cleanup (TODO)"
+            condition: always()
+
+# Referencias oficiales:
+# - YAML schema: https://learn.microsoft.com/azure/devops/pipelines/yaml-schema
+# - Conditions: https://learn.microsoft.com/azure/devops/pipelines/process/conditions
+# - Variables: https://learn.microsoft.com/azure/devops/pipelines/process/variables

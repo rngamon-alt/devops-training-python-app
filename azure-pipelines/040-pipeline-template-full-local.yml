@@ -1,0 +1,116 @@
+# Práctica 5 - Azure DevOps (template full Local)
+#
+# Este template es una guía (NO solución final).
+# Escenario Local:
+# - Pool self-hosted con Docker/Docker Compose
+# - local-registry para imágenes
+# - servicios locales accesibles desde la red del agente
+
+trigger:
+  branches:
+    include:
+      - "*"
+
+pr:
+  branches:
+    include:
+      - develop
+      - master
+
+parameters:
+  - name: RUN_CD
+    type: boolean
+    default: false
+  - name: ENABLE_REGISTRY_PUSH
+    type: boolean
+    default: true
+
+variables:
+  # TODO (E2): mover a Variable Group por proyecto
+  - name: AZP_POOL
+    value: "local-docker"
+  - name: IMAGE_REPO
+    value: "contrerasadr/devops-training-python-app"
+  - name: REGISTRY_HOST
+    value: "local-registry:5000"
+  - name: REGISTRY_REPO
+    value: "devops-training-python-app"
+  - name: COMPOSE_FILE
+    value: "docker-compose.yml"
+  - name: COMPOSE_SERVICE
+    value: "app"
+
+stages:
+  - stage: CI
+    displayName: "CI - Lint/Test/Build"
+    jobs:
+      - job: ci_build
+        pool:
+          name: $(AZP_POOL)
+        steps:
+          - checkout: self
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              CI_IMAGE="python-ci-tools:$(Build.BuildId)"
+              REGISTRY_IMAGE="$(REGISTRY_HOST)/$(REGISTRY_REPO):${IMAGE_VERSION}"
+
+              echo "TODO (E3): docker build -t ${CI_IMAGE} -f devops/ci.Dockerfile ."
+              echo "TODO (E3): docker run --rm ... ${CI_IMAGE} sh -lc 'make lint'"
+              echo "TODO (E3): docker run --rm ... ${CI_IMAGE} sh -lc 'make test'"
+              echo "TODO (E4): docker build -t ${IMAGE_NAME} -f devops/Dockerfile ."
+
+              echo "TODO (Opcional A): push a registry local"
+              echo "  docker login $(REGISTRY_HOST) -u \$REGISTRY_USER -p \$REGISTRY_PASSWORD"
+              echo "  docker tag ${IMAGE_NAME} ${REGISTRY_IMAGE}"
+              echo "  docker push ${REGISTRY_IMAGE}"
+            displayName: "CI steps (TODO)"
+
+  - stage: CD
+    displayName: "CD - Deploy compose"
+    dependsOn: CI
+    condition: and(
+      succeeded(),
+      or(
+        eq(${{ parameters.RUN_CD }}, true),
+        eq(variables['Build.SourceBranchName'], 'develop'),
+        eq(variables['Build.SourceBranchName'], 'master')
+      )
+    )
+    jobs:
+      - job: cd_deploy
+        pool:
+          name: $(AZP_POOL)
+        steps:
+          - checkout: self
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              REGISTRY_IMAGE="$(REGISTRY_HOST)/$(REGISTRY_REPO):${IMAGE_VERSION}"
+
+              if [ "$(Build.SourceBranchName)" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+              COMPOSE_PROJECT=$(echo "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')
+
+              echo "TODO (E6): pull desde local-registry y tag local"
+              echo "Ejemplo:"
+              echo "  docker login $(REGISTRY_HOST) -u \$REGISTRY_USER -p \$REGISTRY_PASSWORD"
+              echo "  docker pull ${REGISTRY_IMAGE}"
+              echo "  docker tag ${REGISTRY_IMAGE} ${IMAGE_NAME}"
+
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} up -d"
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} logs $(COMPOSE_SERVICE)"
+            displayName: "Deploy (TODO)"
+          - script: |
+              IMAGE_VERSION=$(cat VERSION)
+              IMAGE_NAME="$(IMAGE_REPO):${IMAGE_VERSION}"
+              if [ "$(Build.SourceBranchName)" = "master" ]; then DEPLOY_ENV=PRO; else DEPLOY_ENV=DEV; fi
+              COMPOSE_PROJECT=$(echo "$DEPLOY_ENV" | tr '[:upper:]' '[:lower:]')
+
+              echo "TODO (E6): docker compose -p ${COMPOSE_PROJECT} down --volumes || true"
+              echo "TODO (E6): docker rmi ${IMAGE_NAME} || true"
+            displayName: "Cleanup (TODO)"
+            condition: always()
+
+# Referencias:
+# - Self-hosted agents: https://learn.microsoft.com/azure/devops/pipelines/agents/agents
+# - Variable groups: https://learn.microsoft.com/azure/devops/pipelines/library/variable-groups

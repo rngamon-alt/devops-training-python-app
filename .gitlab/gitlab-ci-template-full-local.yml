@@ -1,0 +1,64 @@
+## Práctica 4 - GitLab CI/CD (template full - local)
+##
+## Este fichero NO contiene la solución final.
+## Es una guía con ejemplos comentados para completar el pipeline.
+## En este template se asume runner local con registry/servicios locales.
+
+stages:
+  - ci
+  - cd
+
+variables:
+  # TODO (E2): Variables globales (en GitLab CI/CD Variables)
+  # IMAGE_REPO: "contrerasadr/devops-training-python-app"
+  # REGISTRY_HOST: "local-registry:5000"
+  # REGISTRY_REPO: "contrerasadr/devops-training-python-app"
+  # COMPOSE_FILE: "docker-compose.yml"
+  # COMPOSE_SERVICE: "app"
+  # ENABLE_REGISTRY_PUSH: "true"
+  # RUN_CD: "true"
+
+ci:build:
+  stage: ci
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - echo "TODO: build CI image (devops/ci.Dockerfile)"
+    - echo "TODO: lint/test inside CI image"
+    - echo "TODO: docker build -t $IMAGE_NAME -f devops/Dockerfile ."
+    - echo "TODO: optional push to local registry"
+
+cd:deploy:
+  stage: cd
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  rules:
+    - if: '$RUN_CD == "true"'
+      variables:
+        ENV_NAME: "DEV"
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      variables:
+        ENV_NAME: "PRO"
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      variables:
+        ENV_NAME: "DEV"
+      when: on_success
+    - when: never
+  environment:
+    name: $ENV_NAME
+  script:
+    # Nota: con runner local puedes usar registry local (pull).
+    # Si no hay registry disponible, se simula con build local.
+    - echo "TODO: docker compose up -d + logs"
+  after_script:
+    - echo "TODO: cleanup"
