@@ -1,19 +1,19 @@
 pipeline {
-
-agent {
+    agent {
         dockerfile {
             // indicar que el archivo está dentro de la carpeta 'devops'
-            dir 'devops' 
+            dir 'devops'
         }
-    }    stages {
-       stage('Test') {
-            
+    }
+
+    stages {
+        stage('Test') {
             steps {
                 sh 'pytest -q'
             }
         }
-         stage('Lint') {
-           
+
+        stage('Lint') {
             steps {
                 sh 'pip install -r requirements.txt flake8 mypy'
                 sh 'make lint'
