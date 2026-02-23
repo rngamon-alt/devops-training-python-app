@@ -9,6 +9,7 @@ app = Flask(__name__)
 # ~comment
 
 def favorite_colors() -> List[Dict]:
+
     config = {
         "user": os.environ.get("DB_USER", "root"),
         "password": os.environ.get("DB_PWD", "root"),
@@ -27,6 +28,7 @@ def favorite_colors() -> List[Dict]:
 
 @app.route("/")
 def index() -> str:
+
     return json.dumps({"favorite_colors": favorite_colors()})
 
 if __name__ == "__main__":

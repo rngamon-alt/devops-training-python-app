@@ -11,6 +11,25 @@ pipeline {
   agent any
 
   stages {
+    stage('Build CI Image') {
+      steps {
+        // Construimos la imagen desde devops/ci.Dockerfile
+        sh 'docker build -t devops/ci:latest -f devops/ci.Dockerfile .'
+      }
+    }
+    stage('Lint') {
+      agent {
+        docker {
+          image 'devops/ci:latest'
+        }
+      }
+      steps {
+        // Instalamos linters y dependencias extra
+        sh '''
+          pip install -r requirements.txt flake8 mypy && make reformat && make lint          
+        '''
+      }
+    }
     stage('Test') {
       /*
         `agent` dentro de un stage permite que SOLO ese stage se ejecute en un contexto concreto.
