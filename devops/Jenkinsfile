@@ -27,7 +27,8 @@ pipeline {
         // Instalamos linters y dependencias extra
         sh '''
           pip install -r requirements.txt flake8 mypy black
-          make lint
+          make reformat   # <--- formatea automáticamente el código
+          make lint       # <--- verifica estilo y tipos         
         '''
       }
     }
