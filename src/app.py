@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 # ~comment
 
+
 def favorite_colors() -> List[Dict]:
     config = {
         "user": os.environ.get("DB_USER", "root"),
@@ -24,6 +25,7 @@ def favorite_colors() -> List[Dict]:
     connection.close()
 
     return results
+
 
 @app.route("/")
 def index() -> str:
