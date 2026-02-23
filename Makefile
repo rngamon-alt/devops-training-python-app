@@ -18,9 +18,9 @@ reformat:             ## Run pep8, black, mypy linters.
 
 lint:             ## Run pep8, black, mypy linters.
 	$(ENV_PREFIX)flake8 src/
-	$(ENV_PREFIX)black -l 79 -t py311 --check src/
-	$(ENV_PREFIX)black -l 79 -t py311 --check tests/
-	$(ENV_PREFIX)black -l 79 -t py311 --check lab/
+	$(ENV_PREFIX)black --pyi -l 79 -t py311 --check src/
+	$(ENV_PREFIX)black --pyi -l 79 -t py311 --check tests/
+	$(ENV_PREFIX)black --ipynb -l 79 -t py311 --check lab/
 	$(ENV_PREFIX)mypy --ignore-missing-imports src/
 
 .PHONY: test
