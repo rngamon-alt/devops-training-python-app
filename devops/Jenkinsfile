@@ -19,12 +19,17 @@ pipeline {
       */
       agent {
         docker {
-          image 'maven:3.8.6-openjdk-11-slim'
+          image 'python:3.6-slim'
         }
       }
       steps {
-        sh 'mvn -version'
-        sh 'echo "Stage dummy. En la Practica 2 ejecutaras aqui los tests unitarios."'
+        sh 'pytest'
+      }
+    }
+    stage('Info') {
+      steps {
+        echo "Job: ${env.JOB_NAME}"
+        echo "Build: ${env.BUILD_NUMBER}"
       }
     }
   }
