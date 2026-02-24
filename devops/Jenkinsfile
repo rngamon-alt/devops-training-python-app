@@ -1,11 +1,3 @@
-// Función reusable para ejecutar cualquier bloque dentro de Docker
-def runInDocker(String image, Closure body) {
-    docker.image(image).inside {
-        body()
-    }
-}
-
-
 // Función para ejecutar cualquier bloque dentro de un contenedor Docker
 def runInDocker(String image, Closure body) {
     docker.image(image).inside {
