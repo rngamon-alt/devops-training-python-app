@@ -1,31 +1,35 @@
-// Función para ejecutar cualquier bloque dentro de un contenedor Docker
+// Función para ejecutar cualquier bloque dentro del contenedor Docker
 def runInDocker(String image, Closure body) {
     docker.image(image).inside {
-        body()
+        body()// Ejecuta los pasos dentro del contenedor
     }
 }
 
 pipeline {
   // `agent any` = el pipeline se ejecuta en cualquier nodo/agente disponible.
   agent any
+  // Parámetros del build para decidir si ejecutar CD
   parameters {
     booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD')
   }
+  // // Variables de entorno globales accesibles en todos los stages
   environment {
     IMAGE_NAME = "devops/ci:latest"
     APP_URL    = "http://localhost:5001/"
   }
   stages {
+	// Stage 1: Construcción de la imagen CI
     stage('Build CI Image') {
       steps {
         sh 'docker build --build-arg VERSION=1.0.0 -t ${IMAGE_NAME} -f devops/ci.Dockerfile .'
       }
     }
+	// Stage 2: Linter y formato de código
     stage('Lint') {
       steps {
         script {
           runInDocker('devops/ci:latest') {
-            // Instalamos linters y dependencias extra
+            // Instala linters y dependencias, luego formatea y lint
             sh '''
                pip install -r requirements.txt flake8 mypy black
                make reformat
@@ -34,19 +38,23 @@ pipeline {
           }
         }
       }
-    }    
+    }
+	// Stage 3: Tests unitarios
     stage('Test') {      
       steps {
         script {
           runInDocker('devops/ci:latest') {
+		  // Instala dependencias y ejecuta tests unitarios
           sh 'pip install -r requirements.txt || true'
           sh 'pytest'
           }
         }
       }
-    }  
+    }
+	// Stage 4: Despliegue simulado (CD)
     stage('CD') {
       when {
+		// Ejecutar solo en develop/master o si RUN_CD=true
         anyOf {
           expression { return params.RUN_CD }
             branch 'develop'
@@ -64,17 +72,17 @@ pipeline {
         echo "Application URL: ${env.APP_URL}"
         script {
           env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV'
-
           echo "Deploying to ${env.DEPLOY_ENV}"
           echo "RUN_CD=${params.RUN_CD}, branch=${env.BRANCH_NAME}"
 
           //def composeProject = (env.DEPLOY_ENV == 'PRO') ? 'pro' : 'dev'
-
+          // Levanta los contenedores de la app usando Docker Compose
           sh "docker compose -p ${COMPOSE_PROJECT} up -d"
           sh "sleep 5"
           sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
         }
-	    }	
+	    }
+	  // Hooks post del stage CD
       post {
         always {
           echo "Cleaning resources..."
@@ -89,7 +97,8 @@ pipeline {
           sh "docker compose -p ${COMPOSE_PROJECT} logs || true"
         }
       }
-    }    
+    }
+	// Stage 5: Info
     stage('Info') {
       steps {
         echo "Job: ${env.JOB_NAME}"
@@ -102,5 +111,5 @@ pipeline {
         sh "echo APP_URL=${APP_URL}"
       }
     }
-  }
-}
+  }// fin stages
+}// fin pipeline
