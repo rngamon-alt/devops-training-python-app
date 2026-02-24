@@ -12,7 +12,7 @@ pipeline {
   parameters {
     booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD')
   }
-  // // Variables de entorno globales accesibles en todos los stages
+  // Variables de entorno globales accesibles en todos los stages
   environment {
     IMAGE_NAME = "devops/ci:latest"
     APP_URL    = "http://localhost:5001/"
@@ -81,7 +81,7 @@ pipeline {
           sh "sleep 5"
           sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
         }
-	    }
+	  }
 	  // Hooks post del stage CD
       post {
         always {
