@@ -6,50 +6,105 @@
   hasta construir un pipeline CI/CD completo.
 */
 
+
+// Función para ejecutar cualquier bloque dentro de un contenedor Docker
+def runInDocker(String image, Closure body) {
+    docker.image(image).inside {
+        body()
+    }
+}
+
 pipeline {
   // `agent any` = el pipeline se ejecuta en cualquier nodo/agente disponible.
   agent any
-
+  parameters {
+    booleanParam(name: 'RUN_CD', defaultValue: false, description: 'Ejecutar CD')
+  }
+  environment {
+    IMAGE_NAME = "devops/ci:latest"
+    APP_URL    = "http://localhost:5001/"
+  }
   stages {
     stage('Build CI Image') {
       steps {
-        // Construimos la imagen desde devops/ci.Dockerfile
-        sh 'docker build -t devops/ci:latest -f devops/ci.Dockerfile .'
+        sh 'docker build --build-arg VERSION=1.0.0 -t ${IMAGE_NAME} -f devops/ci.Dockerfile .'
       }
     }
     stage('Lint') {
-      agent {
-        docker {
-          image 'devops/ci:latest'
+      steps {
+        script {
+          runInDocker('devops/ci:latest') 
+          // Instalamos linters y dependencias extra
+          sh '''
+            pip install -r requirements.txt flake8 mypy && make reformat && make lint          
+          '''
+        }
+      }  
+    }
+    stage('Test') {      
+      steps {
+        script {
+          runInDocker('devops/ci:latest') {
+          sh 'pip install -r requirements.txt || true'
+          sh 'pytest'
+          }
         }
       }
-      steps {
-        // Instalamos linters y dependencias extra
-        sh '''
-          pip install -r requirements.txt flake8 mypy && make reformat && make lint          
-        '''
+      stage('CD') {
+      when {
+        anyOf {
+          expression { return params.RUN_CD }
+            branch 'develop'
+            branch 'master'
+          }
+        }
+      environment {
+        // Variables dependientes de la rama
+        DEPLOY_ENV = "${(env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV'}"
+        COMPOSE_PROJECT = "${(env.BRANCH_NAME == 'master') ? 'pro' : 'dev'}"
       }
-    }
-    stage('Test') {
-      /*
-        `agent` dentro de un stage permite que SOLO ese stage se ejecute en un contexto concreto.
-        En este caso, usamos Docker como capa de virtualizacion: los comandos se ejecutan dentro
-        de un contenedor temporal.
-      */
-      agent {
-        docker {
-          image 'python:3.6-slim'
+      steps {
+        echo "CD habilitado: RUN_CD=${params.RUN_CD}, branch=${env.BRANCH_NAME}"
+        echo "Deploying image: ${env.IMAGE_NAME}"
+        echo "Application URL: ${env.APP_URL}"
+        script {
+          env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV'
+
+          echo "Deploying to ${env.DEPLOY_ENV}"
+          echo "RUN_CD=${params.RUN_CD}, branch=${env.BRANCH_NAME}"
+
+          //def composeProject = (env.DEPLOY_ENV == 'PRO') ? 'pro' : 'dev'
+
+          sh "docker compose -p ${COMPOSE_PROJECT} up -d"
+          sh "sleep 5"
+          sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
+        }
+	  }	
+      post {
+        always {
+          echo "Cleaning resources..."
+          sh "docker compose -p ${COMPOSE_PROJECT} down --volumes || true"
+          sh "docker rmi ${IMAGE_NAME} || true"
+        }
+        success {
+          echo "SUCCESS"
+        }
+        failure {
+          echo "FAILURE"
+          sh "docker compose -p ${COMPOSE_PROJECT} logs || true"
         }
       }
-      steps {
-        sh 'pip install -r requirements.txt || true'
-        sh 'pytest'
-      }
-    }
+    }    
     stage('Info') {
       steps {
         echo "Job: ${env.JOB_NAME}"
         echo "Build: ${env.BUILD_NUMBER}"
+
+        echo "Imagen: ${env.IMAGE_NAME}"
+        echo "URL App: ${env.APP_URL}"
+
+        sh "echo IMAGE_NAME=${IMAGE_NAME}"
+        sh "echo APP_URL=${APP_URL}"
       }
     }
   }
