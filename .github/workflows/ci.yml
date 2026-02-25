@@ -6,7 +6,16 @@
 name: CI (dummy)
 
 on:
+  push:
+    branches: ['**'] # todas las ramas
+  pull_request:
+    branches: ['develop','master']
   workflow_dispatch:
+    inputs:
+      RUN_CD:
+        description: 'Run CD stage'
+        required: false
+        default: 'false'
 
 jobs:
   dummy:
