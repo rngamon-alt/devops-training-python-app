@@ -4,3 +4,7 @@ black[jupyter]
 
 Flask
 psycopg2
+
+black
+flake8
+pytest
