@@ -17,6 +17,11 @@ on:
         required: false
         default: 'false'
 
+# Variables de entorno a nivel de workflow
+env:
+  IMAGE_NAME: "devops/ci:latest"
+  APP_URL: "http://localhost:5001/"
+
 jobs:
   dummy:
     runs-on: ubuntu-latest
@@ -28,6 +33,9 @@ jobs:
           echo "Branch: $GITHUB_REF_NAME"
   ci:
     runs-on: ubuntu-latest
+    # Sobrescribiendo una variable a nivel de job
+    env:
+      APP_URL: "https://localhost:5001"
     steps:
       # Step 1: Checkout
       - name: Checkout repository
@@ -40,3 +48,14 @@ jobs:
           echo "Commit SHA: ${{ github.sha }}"
           echo "Runner OS: ${{ runner.os }}"
           echo "Runner Name: ${{ runner.name }}"
+
+      # Step 3: Variables de entorno
+      - name: Env- name: Print env variables in shell
+        run: |
+          echo "IMAGE_NAME (shell): $IMAGE_NAME"
+          echo "APP_URL (shell): $APP_URL"
+
+      - name: Print env variables in expressions
+        run: |
+          echo "IMAGE_NAME (expression): ${{ env.IMAGE_NAME }}"
+          echo "APP_URL (expression): ${{ env.APP_URL }}"
