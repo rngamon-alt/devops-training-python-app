@@ -57,7 +57,7 @@ jobs:
           echo "Runner Name: ${{ runner.name }}"
 
       # Step 3: Variables de entorno
-      - name: Env- name: Print env variables in shell
+      - name: Env variables in shell
         run: |
           echo "IMAGE_NAME (shell): $IMAGE_NAME"
           echo "APP_URL (shell): $APP_URL"
