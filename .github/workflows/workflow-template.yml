@@ -24,7 +24,6 @@ env:
   # TODO (E2): Variables de entorno globales:
   # IMAGE_NAME: "contrerasadr/devops-training-python-app:0.0.1"
   # APP_URL: "http://localhost:5001/"
-
 jobs:
   ci:
     name: CI
