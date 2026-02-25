@@ -20,7 +20,6 @@ on:
         description: 'Ejecutar CD (solo develop/master)'
         type: boolean
         default: false
-
 env:
   # TODO (E2): Variables de entorno globales:
   # IMAGE_NAME: "contrerasadr/devops-training-python-app:0.0.1"
