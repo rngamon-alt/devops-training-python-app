@@ -21,7 +21,6 @@ on:
 env:
   IMAGE_NAME: "devops/ci:latest"
   APP_URL: "http://localhost:5001/"
-
 jobs:
   dummy:
     runs-on: ubuntu-latest
