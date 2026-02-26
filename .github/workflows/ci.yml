@@ -92,7 +92,19 @@ jobs:
         run: |
           make reformat
           make lint
+      
+      - name: Start services with Docker Compose
+        run: docker compose up -d
+        
+      - name: Run e2e tests
+        run: |
+          curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
 
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down
+        
       - name: Run tests
         run: |
           pytest
