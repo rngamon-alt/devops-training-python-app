@@ -52,7 +52,7 @@ jobs:
       # Step 2: Build Docker image
       - name: Build Docker image
         run: |
-          docker build -f devops/ci.Dockerfile -t $IMAGE_NAME .
+          docker build -f devops/Dockerfile -t $IMAGE_NAME .
 
       # Step 3: Info
       - name: Info
