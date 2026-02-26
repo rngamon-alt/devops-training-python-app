@@ -86,7 +86,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y make
-          pip install -r requirements.txt flake8 mypy black
+          pip install -r requirements.txt
 
       - name: Lint
         run: |
@@ -108,3 +108,7 @@ jobs:
       - name: Run tests
         run: |
           pytest
+
+      - name: Run CI
+        run: |
+          make test
