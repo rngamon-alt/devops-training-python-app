@@ -8,7 +8,6 @@ app = Flask(__name__)
 
 # ~comment
 
-
 def favorite_colors() -> List[Dict]:
 
     config = {
@@ -27,12 +26,10 @@ def favorite_colors() -> List[Dict]:
 
     return results
 
-
 @app.route("/")
 def index() -> str:
 
     return json.dumps({"favorite_colors": favorite_colors()})
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
