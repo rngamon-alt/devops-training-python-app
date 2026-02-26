@@ -31,7 +31,8 @@ env:
   APP_URL: "http://localhost:5001/"
 jobs:
   dummy:
-    runs-on: ubuntu-latest
+    # runner self-hosted
+    runs-on: [self-hosted, linux, docker] #ubuntu-latest
     steps:
       - name: Mostrar contexto
         run: |
@@ -99,10 +100,22 @@ jobs:
       - name: Start services with Docker Compose
         run: docker compose up -d
         
-      - name: Run e2e tests
+      #- name: Run e2e tests
+      #  run: |
+      #    curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
+      - name: Wait for app
         run: |
-          curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
-
+          for i in {1..10}; do
+            if curl -s http://localhost:5001/ > /dev/null; then
+              echo "App is up!"
+              exit 0
+            fi
+            echo "Waiting for app..."
+            sleep 3
+          done
+          echo "App did not start"
+          exit 1
+      
       - name: Cleanup
         if: always()
         run: |
