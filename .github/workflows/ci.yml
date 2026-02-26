@@ -46,11 +46,16 @@ jobs:
     env:
       APP_URL: "https://localhost:5001"
     steps:
-      # Step 1: Checkout
+      # Step 1: Clonar repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Info
+      # Step 2: Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t devops/ci:latest .
+
+      # Step 3: Info
       - name: Info
         run: |
           echo "Branch: ${{ github.ref_name }}"
@@ -58,7 +63,7 @@ jobs:
           echo "Runner OS: ${{ runner.os }}"
           echo "Runner Name: ${{ runner.name }}"
 
-      # Step 3: Variables de entorno
+      # Step 4: Variables de entorno
       - name: Env variables in shell
         run: |
           echo "IMAGE_NAME (shell): $IMAGE_NAME"
@@ -74,6 +79,7 @@ jobs:
           echo "RUN_CD = ${{ inputs.RUN_CD }}"
           echo "DEPLOY_ENV = ${{ inputs.DEPLOY_ENV }}"
 
+      #Step5: Install dependencies and Lint
       - name: Install dependencies
         run: |
           apt-get update
