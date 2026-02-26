@@ -31,7 +31,8 @@ env:
   APP_URL: "http://localhost:5001/"
 jobs:
   dummy:
-    runs-on: ubuntu-latest
+    # runner self-hosted
+    runs-on: [self-hosted, linux, docker] #ubuntu-latest
     steps:
       - name: Mostrar contexto
         run: |
