@@ -38,10 +38,9 @@ jobs:
           echo "Repo: $GITHUB_REPOSITORY"
           echo "Ref:  $GITHUB_REF"
           echo "Branch: $GITHUB_REF_NAME"
-  ci:
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ vars.IMAGE_NAME }}
+  #ci:
+  build-docker:
+    runs-on: ubuntu-latest      
     # Sobrescribiendo una variable a nivel de job
     env:
       APP_URL: "https://localhost:5001"
