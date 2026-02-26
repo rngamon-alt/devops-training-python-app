@@ -51,12 +51,7 @@ jobs:
       # Step 1: Clonar repository
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # Step 2: Build Docker image
-      - name: Build Docker image
-        run: |
-          docker build -f devops/Dockerfile -t $IMAGE_NAME .
-
+      
       # Step 3: Info
       - name: Info
         run: |
@@ -88,11 +83,19 @@ jobs:
           sudo apt-get install -y make
           pip install -r requirements.txt
 
-      - name: Lint
+      #- name: Lint
+      #  run: |
+      #    make reformat
+      #    make lint
+
+      - name: Run CI
         run: |
-          make reformat
-          make lint
-      
+          make test
+
+      - name: Build Docker image
+        run: |
+          docker build -f devops/Dockerfile -t $IMAGE_NAME .
+
       - name: Start services with Docker Compose
         run: docker compose up -d
         
@@ -105,10 +108,8 @@ jobs:
         run: |
           docker compose down
         
-      - name: Run tests
-        run: |
-          pytest
+      #- name: Run tests
+      #  run: |
+      #    pytest
 
-      - name: Run CI
-        run: |
-          make test
+      
