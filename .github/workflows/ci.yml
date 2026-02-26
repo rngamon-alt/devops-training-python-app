@@ -41,7 +41,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     container:
-      image: $IMAGE_NAME
+      image: ${{ vars.IMAGE_NAME }}
     # Sobrescribiendo una variable a nivel de job
     env:
       APP_URL: "https://localhost:5001"
