@@ -40,7 +40,10 @@ jobs:
           echo "Branch: $GITHUB_REF_NAME"
   #ci:
   build-docker:
-    runs-on: ubuntu-latest      
+    runs-on: ubuntu-latest
+    if: |
+      (github.ref_name == 'develop' || github.ref_name == 'master')
+      && (github.event_name == 'workflow_dispatch' && inputs.RUN_CD == 'true')
     # Sobrescribiendo una variable a nivel de job
     env:
       APP_URL: "https://localhost:5001"
