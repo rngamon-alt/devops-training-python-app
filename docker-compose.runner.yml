@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  gha-runner:
+    image: myoung34/github-runner:latest
+    container_name: gha-runner
+    restart: unless-stopped
+    environment:
+      ACCESS_TOKEN: ${GITHUB_PAT}
+      REPO_URL: https://github.com/rngamon-alt/devops-training-python-app
+      RUNNER_SCOPE: repo
+      RUNNER_NAME: local-runner-01
+      RUNNER_WORKDIR: /tmp/runner
+      RUNNER_LABELS: self-hosted,linux,docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gha-runner-work:/tmp/runner
+    networks:
+      - devops_training_net
+
+volumes:
+  gha-runner-work:
+
+networks:
+  devops_training_net:
+    external: true
+
