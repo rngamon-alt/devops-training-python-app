@@ -40,6 +40,8 @@ jobs:
           echo "Branch: $GITHUB_REF_NAME"
   ci:
     runs-on: ubuntu-latest
+    container:
+      image: ${{ env.IMAGE_NAME }}
     # Sobrescribiendo una variable a nivel de job
     env:
       APP_URL: "https://localhost:5001"
@@ -71,3 +73,17 @@ jobs:
         run: |
           echo "RUN_CD = ${{ inputs.RUN_CD }}"
           echo "DEPLOY_ENV = ${{ inputs.DEPLOY_ENV }}"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Lint
+        run: |
+          pip install -r requirements.txt flake8 mypy black
+          make reformat
+          make lint
+
+      - name: Run tests
+        run: |
+          pytest
