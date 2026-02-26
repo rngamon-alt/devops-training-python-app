@@ -38,19 +38,26 @@ jobs:
           echo "Repo: $GITHUB_REPOSITORY"
           echo "Ref:  $GITHUB_REF"
           echo "Branch: $GITHUB_REF_NAME"
-  ci:
+  #ci:
+  build-docker:
     runs-on: ubuntu-latest
-    container:
-      image: ${{ vars.IMAGE_NAME }}
+    if: |
+      (github.ref_name == 'develop' || github.ref_name == 'master')
+      && (github.event_name == 'workflow_dispatch' && inputs.RUN_CD == 'true')
     # Sobrescribiendo una variable a nivel de job
     env:
       APP_URL: "https://localhost:5001"
     steps:
-      # Step 1: Checkout
+      # Step 1: Clonar repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Info
+      # Step 2: Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -f devops/Dockerfile -t $IMAGE_NAME .
+
+      # Step 3: Info
       - name: Info
         run: |
           echo "Branch: ${{ github.ref_name }}"
@@ -58,7 +65,7 @@ jobs:
           echo "Runner OS: ${{ runner.os }}"
           echo "Runner Name: ${{ runner.name }}"
 
-      # Step 3: Variables de entorno
+      # Step 4: Variables de entorno
       - name: Env variables in shell
         run: |
           echo "IMAGE_NAME (shell): $IMAGE_NAME"
@@ -74,17 +81,30 @@ jobs:
           echo "RUN_CD = ${{ inputs.RUN_CD }}"
           echo "DEPLOY_ENV = ${{ inputs.DEPLOY_ENV }}"
 
+      #Step5: Install dependencies and Lint
       - name: Install dependencies
         run: |
-          apt-get update
-          apt-get install -y make
+          sudo apt-get update
+          sudo apt-get install -y make
           pip install -r requirements.txt flake8 mypy black
 
       - name: Lint
         run: |
           make reformat
           make lint
+      
+      - name: Start services with Docker Compose
+        run: docker compose up -d
+        
+      - name: Run e2e tests
+        run: |
+          curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
 
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down
+        
       - name: Run tests
         run: |
           pytest
