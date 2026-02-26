@@ -81,8 +81,8 @@ jobs:
       #Step5: Install dependencies and Lint
       - name: Install dependencies
         run: |
-          apt-get update
-          apt-get install -y make
+          sudo apt-get update
+          sudo apt-get install -y make
           pip install -r requirements.txt flake8 mypy black
 
       - name: Lint
