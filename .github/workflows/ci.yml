@@ -96,7 +96,10 @@ jobs:
         run: |
           docker ps -a
           docker compose logs
-
+      
+      - name: Debug app logs
+        run: docker logs my-flask-app-dc
+      
       #- name: Run e2e tests
       #  run: |
       #    curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
