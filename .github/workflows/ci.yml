@@ -29,19 +29,10 @@ on:
 env:
   IMAGE_NAME: "python:3.6-slim" #"devops/ci:latest"
   APP_URL: "http://localhost:5001/"
-jobs:
-  dummy:
-    # runner self-hosted
-    runs-on: [self-hosted, linux, docker] #ubuntu-latest
-    steps:
-      - name: Mostrar contexto
-        run: |
-          echo "Repo: $GITHUB_REPOSITORY"
-          echo "Ref:  $GITHUB_REF"
-          echo "Branch: $GITHUB_REF_NAME"
-  #ci:
+jobs:  
   build-docker:    
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, docker] 
+    #ubuntu-latest
     # Condiciones por rama: CD solo en develop/master
     if: |
       (github.ref_name == 'develop' || github.ref_name == 'master')
