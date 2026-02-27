@@ -91,7 +91,12 @@ jobs:
 
       - name: Start services with Docker Compose
         run: docker compose up -d
-        
+
+      - name: Debug containers
+        run: |
+          docker ps -a
+          docker compose logs
+
       #- name: Run e2e tests
       #  run: |
       #    curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
