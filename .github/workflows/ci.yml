@@ -40,8 +40,8 @@ jobs:
           echo "Ref:  $GITHUB_REF"
           echo "Branch: $GITHUB_REF_NAME"
   #ci:
-  build-docker:
-    runs-on: ubuntu-latest
+  build-docker:    
+    runs-on: [self-hosted, linux, docker] #ubuntu-latest
     # Condiciones por rama: CD solo en develop/master
     if: |
       (github.ref_name == 'develop' || github.ref_name == 'master')
