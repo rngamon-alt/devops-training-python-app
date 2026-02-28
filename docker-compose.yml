@@ -9,7 +9,7 @@ services:
     container_name: my-flask-app-dc
     restart: unless-stopped
     networks:
-      - scalian_training
+      - devops_training_net #scalian_training
     environment:
       DB_USER: root
       DB_PWD: rootpwd
@@ -36,12 +36,14 @@ services:
       - ./db:/docker-entrypoint-initdb.d
       - dbdata:/var/lib/postgresql/data
     networks:
-      scalian_training:
+      devops_training_net:#scalian_training:
 
 networks:
-  scalian_training:
+  devops_training_net:#scalian_training:
     driver: bridge
+    external: true
   
 volumes:
 
   dbdata:
+
