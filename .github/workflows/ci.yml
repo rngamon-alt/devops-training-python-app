@@ -95,6 +95,9 @@ jobs:
       - name: Start services with Docker Compose
         run: docker compose up -d
 
+      - name: Ver logs de la base de datos
+        run: docker compose logs db
+      
       - name: Debug containers
         run: |
           docker ps -a
