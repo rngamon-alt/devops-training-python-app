@@ -27,7 +27,7 @@ on:
 
 # Variables de entorno a nivel de workflow
 env:
-  IMAGE_NAME: "python:3.6-slim" #"devops/ci:latest"
+  IMAGE_NAME: devops-training-python-app:latest #"python:3.6-slim" #"devops/ci:latest"
   APP_URL: "http://app:5000/"
 jobs:  
   build-docker:    
@@ -95,7 +95,7 @@ jobs:
           docker volume prune -f
 
       - name: Start services with Docker Compose
-        run: docker compose up -d
+        run: docker compose up -d --build
 
       - name: Ver logs de la base de datos
         run: docker compose logs db
