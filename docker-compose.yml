@@ -36,14 +36,15 @@ services:
       - ./db:/docker-entrypoint-initdb.d
       - dbdata:/var/lib/postgresql/data
     networks:
-      devops_training_net:#scalian_training:
+      devops_training_net: #scalian_training:
 
 networks:
-  devops_training_net:#scalian_training:
+  devops_training_net: #scalian_training:
     driver: bridge
     external: true
   
 volumes:
 
   dbdata:
+
 
