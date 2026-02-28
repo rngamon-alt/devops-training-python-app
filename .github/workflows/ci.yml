@@ -50,7 +50,7 @@ jobs:
         run: make test
 
       - name: Build Docker image
-        run: docker build -f devops/Dockerfile -t $IMAGE_NAME .
+        run: docker build -f devops/ci.Dockerfile -t $IMAGE_NAME .
 
       - name: Clean previous containers and volumes
         run: |
