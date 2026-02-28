@@ -17,7 +17,6 @@ def favorite_colors() -> List[Dict]:
         "port": os.environ.get("DB_PORT", "5432"),
         "database": os.environ.get("DB_NAME", "root"),
     }
-    
     print(f"DEBUG: Conectando a la DB: {os.environ.get('DB_NAME')}")
     connection = psycopg2.connect(**config)
     cursor = connection.cursor()
@@ -35,4 +34,5 @@ def index() -> str:
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
+
 
