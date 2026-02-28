@@ -26,7 +26,7 @@ env:
 
 jobs:
   build-docker:
-    runs-on: [self-hosted, linux, docker]
+    runs-on: ubuntu-latest #[self-hosted, linux, docker]
     if: |
       (github.ref_name == 'develop' || github.ref_name == 'master')
       && (github.event_name != 'workflow_dispatch' || inputs.RUN_CD == 'true')
