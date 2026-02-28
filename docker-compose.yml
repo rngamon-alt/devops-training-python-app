@@ -17,7 +17,8 @@ services:
       DB_PORT: 5432
       DB_NAME: knights
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "5001:5000"
 
@@ -37,6 +38,11 @@ services:
       - dbdata:/var/lib/postgresql/data
     networks:
       devops_training_net: #scalian_training:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   devops_training_net: #scalian_training:
@@ -46,5 +52,6 @@ networks:
 volumes:
 
   dbdata:
+
 
 
