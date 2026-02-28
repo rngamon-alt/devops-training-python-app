@@ -3,7 +3,7 @@
 # Punto de partida: workflow mínimo para validar que Actions funciona en el repo.
 # En la Práctica 3 irás ampliando este workflow para llegar a CI/CD.
 
-name: CI (dummy)
+name: CI 
 
 on:
   push:
@@ -106,13 +106,12 @@ jobs:
       
       - name: Run e2e tests Wait for app
         run: |
-          timeout 60 bash -c '
-          until curl -s http://localhost:5001/ > /dev/null; do
+          timeout 90 bash -c '
+          until curl -f http://localhost:5001/ > /dev/null; do
           echo "Waiting for app..."
           sleep 3
           done
           '
-
       - name: Cleanup
         if: always()
         run: |
