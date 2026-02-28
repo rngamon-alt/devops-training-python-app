@@ -28,7 +28,7 @@ on:
 # Variables de entorno a nivel de workflow
 env:
   IMAGE_NAME: "python:3.6-slim" #"devops/ci:latest"
-  APP_URL: "http://localhost:5001/"
+  APP_URL: "http://app:5000/"
 jobs:  
   build-docker:    
     runs-on: [self-hosted, linux, docker] 
@@ -39,7 +39,7 @@ jobs:
       && (github.event_name != 'workflow_dispatch' || inputs.RUN_CD == 'true')
     # Sobrescribiendo una variable a nivel de job
     env:
-      APP_URL: "https://localhost:5001"
+      APP_URL: "https://app:5000"
     steps:
       # Clonar repository
       - name: Checkout repository
@@ -100,18 +100,10 @@ jobs:
       - name: Debug app logs
         run: docker logs my-flask-app-dc
       
-      #- name: Run e2e tests
-      #  run: |
-      #    curl -f http://localhost:5001/  # usa -f para que falle si status != 2xx
-      
-      - name: Run e2e tests Wait for app
+      - name: Run e2e tests
         run: |
-          timeout 90 bash -c '
-          until curl -f http://localhost:5001/ > /dev/null; do
-          echo "Waiting for app..."
-          sleep 3
-          done
-          '
+          curl -f http://app:5000/  # usa -f para que falle si status != 2xx
+      
       - name: Cleanup
         if: always()
         run: |
