@@ -1,13 +1,8 @@
-# Práctica 3 - GitHub Actions (dummy)
-#
-# Punto de partida: workflow mínimo para validar que Actions funciona en el repo.
-# En la Práctica 3 irás ampliando este workflow para llegar a CI/CD.
-
-name: CI 
+name: CI
 
 on:
   push:
-    branches: ['**'] # todas las ramas
+    branches: ['**']
   pull_request:
     branches: ['develop','master']
   workflow_dispatch:
@@ -25,120 +20,76 @@ on:
           - PRO
         default: DEV
 
-# Variables de entorno a nivel de workflow
 env:
-  IMAGE_NAME: devops-training-python-app:latest #"python:3.6-slim" #"devops/ci:latest"
-  APP_URL: "http://app:5000/"
-jobs:  
-  build-docker:    
-    runs-on: [self-hosted, linux, docker] 
-    #ubuntu-latest
-    # Condiciones por rama: CD solo en develop/master
+  IMAGE_NAME: devops-training-python-app:latest
+  APP_URL: "http://localhost:5001/"
+
+jobs:
+  build-docker:
+    runs-on: [self-hosted, linux, docker]
     if: |
       (github.ref_name == 'develop' || github.ref_name == 'master')
       && (github.event_name != 'workflow_dispatch' || inputs.RUN_CD == 'true')
-    # Sobrescribiendo una variable a nivel de job
-    env:
-      APP_URL: "http://app:5000/"
     steps:
-      # Clonar repository
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      # Info
+
       - name: Info
         run: |
           echo "Branch: ${{ github.ref_name }}"
           echo "Commit SHA: ${{ github.sha }}"
           echo "Runner OS: ${{ runner.os }}"
-          echo "Runner Name: ${{ runner.name }}"
 
-      # Variables de entorno
-      - name: Env variables in shell
-        run: |
-          echo "IMAGE_NAME (shell): $IMAGE_NAME"
-          echo "APP_URL (shell): $APP_URL"
-
-      - name: Print env variables in expressions
-        run: |
-          echo "IMAGE_NAME (expression): ${{ env.IMAGE_NAME }}"
-          echo "APP_URL (expression): ${{ env.APP_URL }}"
-
-      - name: Print workflow_dispatch inputs
-        run: |
-          echo "RUN_CD = ${{ inputs.RUN_CD }}"
-          echo "DEPLOY_ENV = ${{ inputs.DEPLOY_ENV }}"
-
-      #Install dependencies and Lint
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y make
+          sudo apt-get install -y make curl
           pip install -r requirements.txt
 
-      #- name: Lint
-      #  run: |
-      #    make reformat
-      #    make lint
+      - name: Run CI tests
+        run: make test
 
-      - name: Run CI
-        run: |
-          make test
+      - name: Build Docker image
+        run: docker build -f devops/Dockerfile -t $IMAGE_NAME .
 
-      - name: Build Docker image en CI
+      - name: Clean previous containers and volumes
         run: |
-          docker build -f devops/Dockerfile -t $IMAGE_NAME .
-          
-      - name: Force Clean Volumes
-        run: |
-          docker compose down -v
+          docker compose down -v --remove-orphans
           docker volume prune -f
-     
-      - name: Debug db folder
-        run: |
-          echo "Listing db folder"
-          ls -la db
-         
-      - name: Start services with Docker Compose
-        run: docker compose up -d --build
 
-      - name: Ver logs de la base de datos
+      - name: Start PostgreSQL container
+        run: docker compose up -d db
+
+      - name: Wait for DB to be ready
         run: |
-          docker volume rm devops-training-python-app_dbdata || true
-          docker compose logs db
-      
-      - name: Debug containers
+          timeout 60 bash -c '
+          until docker exec my-flask-app-db pg_isready -U root; do
+            echo "Waiting for DB..."
+            sleep 3
+          done'
+
+      - name: Start Flask app container
+        run: docker compose up -d app
+
+      - name: Debug running containers
+        run: docker ps -a
+
+      - name: Wait for Flask app to be ready
         run: |
-          docker ps -a
-          docker compose logs
-      
-      - name: Debug app logs
-        run: docker logs my-flask-app-dc
-      
-      - name: Wait for app to be ready
-        run: |
-          echo "Waiting for Flask app to be ready..."
+          echo "Waiting for Flask app..."
           timeout 90 bash -c '
-            until curl -s http://app:5000/ > /dev/null; do
+          until curl -s http://localhost:5001/ > /dev/null; do
             echo "App not ready yet..."
             sleep 3
           done'
 
       - name: Run e2e tests
-        run: |
-          curl -f $APP_URL  # usa -f para que falle si status != 2xx
-      
-      - name: Debug Flask Logs
+        run: curl -f $APP_URL
+
+      - name: Debug Flask logs if failure
         if: failure()
         run: docker logs my-flask-app-dc
-  
+
       - name: Cleanup
         if: always()
-        run: |
-          docker compose down
-        
-      #- name: Run tests
-      #  run: |
-      #    pytest
-
-      
+        run: docker compose down -v --remove-orphans
