@@ -47,11 +47,11 @@ services:
 networks:
   devops_training_net: #scalian_training:
     driver: bridge
-    external: true
   
 volumes:
 
   dbdata:
+
 
 
 
