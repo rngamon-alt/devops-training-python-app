@@ -103,7 +103,9 @@ jobs:
         run: docker compose up -d --build
 
       - name: Ver logs de la base de datos
-        run: docker compose logs db
+        run: |
+          docker volume rm devops-training-python-app_dbdata || true
+          docker compose logs db
       
       - name: Debug containers
         run: |
