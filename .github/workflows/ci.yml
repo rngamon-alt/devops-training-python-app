@@ -104,7 +104,7 @@ jobs:
         run: |
           echo "Waiting for Flask app to be ready..."
           timeout 90 bash -c '
-            until curl -s -f http://app:5000/ > /dev/null; do
+            until curl -s http://app:5000/ > /dev/null; do
             echo "App not ready yet..."
             sleep 3
           done'
