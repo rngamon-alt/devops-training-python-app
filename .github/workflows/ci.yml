@@ -39,7 +39,7 @@ jobs:
       && (github.event_name != 'workflow_dispatch' || inputs.RUN_CD == 'true')
     # Sobrescribiendo una variable a nivel de job
     env:
-      APP_URL: "https://app:5000"
+      APP_URL: "https://app:5000/"
     steps:
       # Clonar repository
       - name: Checkout repository
@@ -102,7 +102,7 @@ jobs:
       
       - name: Run e2e tests
         run: |
-          curl -f http://app:5000/  # usa -f para que falle si status != 2xx
+          curl -f $APP_URL  # usa -f para que falle si status != 2xx
       
       - name: Cleanup
         if: always()
