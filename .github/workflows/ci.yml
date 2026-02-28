@@ -100,6 +100,15 @@ jobs:
       - name: Debug app logs
         run: docker logs my-flask-app-dc
       
+      - name: Wait for app to be ready
+        run: |
+          echo "Waiting for Flask app to be ready..."
+          timeout 90 bash -c '
+            until curl -s -f http://app:5000/ > /dev/null; do
+            echo "App not ready yet..."
+            sleep 3
+          done'
+
       - name: Run e2e tests
         run: |
           curl -f $APP_URL  # usa -f para que falle si status != 2xx
