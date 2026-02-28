@@ -116,6 +116,10 @@ jobs:
         run: |
           curl -f $APP_URL  # usa -f para que falle si status != 2xx
       
+      - name: Debug Flask Logs
+        if: failure()
+        run: docker logs my-flask-app-dc
+  
       - name: Cleanup
         if: always()
         run: |
