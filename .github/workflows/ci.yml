@@ -93,7 +93,12 @@ jobs:
         run: |
           docker compose down -v
           docker volume prune -f
-
+     
+      - name: Debug db folder
+        run: |
+          echo "Listing db folder"
+          ls -la db
+         
       - name: Start services with Docker Compose
         run: docker compose up -d --build
 
