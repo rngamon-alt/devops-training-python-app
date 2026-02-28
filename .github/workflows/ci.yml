@@ -89,8 +89,10 @@ jobs:
         run: |
           docker build -f devops/Dockerfile -t $IMAGE_NAME .
           
-      - name: Stop previous containers and volumes
-        run: docker compose down -v
+      - name: Force Clean Volumes
+        run: |
+          docker compose down -v
+          docker volume prune -f
 
       - name: Start services with Docker Compose
         run: docker compose up -d
