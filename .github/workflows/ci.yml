@@ -88,6 +88,9 @@ jobs:
       - name: Build Docker image en CI
         run: |
           docker build -f devops/Dockerfile -t $IMAGE_NAME .
+          
+      - name: Stop previous containers and volumes
+        run: docker compose down -v
 
       - name: Start services with Docker Compose
         run: docker compose up -d
