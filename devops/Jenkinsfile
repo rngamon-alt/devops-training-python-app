@@ -79,9 +79,16 @@ pipeline {
           //def composeProject = (env.DEPLOY_ENV == 'PRO') ? 'pro' : 'dev'
           // Levanta los contenedores de la app usando Docker Compose
           sh "docker compose -p ${COMPOSE_PROJECT} up -d"
-          sh "sleep 5"
-          // sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
-		  sh "docker compose -p ${COMPOSE_PROJECT} exec -T app curl -f http://localhost:5000/"
+          sh """
+          for i in {1..15}; do
+            if curl -s ${env.APP_URL} > /dev/null; then
+              echo "App is up!"
+              break
+            fi
+            echo "Waiting for Flask app..."
+            sleep 2
+          done
+          """
         }
 	  }
 	  // Hooks post del stage CD
