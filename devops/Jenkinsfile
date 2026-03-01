@@ -1,8 +1,9 @@
 // Función para ejecutar cualquier bloque dentro del contenedor Docker
-def runInDocker(String image, Closure body) {
-    docker.image(image).inside {
-        body()// Ejecuta los pasos dentro del contenedor
-    }
+def runInDocker(String image, Closure body) {    
+	docker.image(image).inside("-v ${pwd()}:/app -w /app") {
+    body()
+}
+
 }
 
 pipeline {
