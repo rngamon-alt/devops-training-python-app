@@ -79,7 +79,8 @@ pipeline {
           // Levanta los contenedores de la app usando Docker Compose
           sh "docker compose -p ${COMPOSE_PROJECT} up -d"
           sh "sleep 5"
-          sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
+          # sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
+		  sh "curl -f ${env.APP_URL}"	
         }
 	  }
 	  // Hooks post del stage CD
