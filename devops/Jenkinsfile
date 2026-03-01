@@ -81,7 +81,7 @@ pipeline {
           sh "docker compose -p ${COMPOSE_PROJECT} up -d"
           sh "sleep 5"
           // sh "docker compose -p ${COMPOSE_PROJECT} logs app"          
-		  sh "curl -f ${env.APP_URL}"	
+		  sh "docker compose -p ${COMPOSE_PROJECT} exec -T app curl -f http://localhost:5000/"
         }
 	  }
 	  // Hooks post del stage CD
