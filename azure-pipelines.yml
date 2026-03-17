@@ -1,0 +1,89 @@
+# Práctica 5 - Azure DevOps Pipelines 
+# Ejercicio 8 - Templates reutilizables
+
+parameters:
+- name: RUN_CD
+  type: boolean
+  default: false
+
+trigger:
+- develop
+- master
+
+pr:
+- develop
+- master
+
+resources:
+  repositories:
+  - repository: iac
+    type: git
+    name: devops-training-iac-devops
+    ref: refs/heads/main
+
+# -------------------
+# STAGE 1 - CI
+# -------------------
+stages:
+- stage: CI
+  displayName: "CI Stage"
+  jobs:
+    # ---------- Job CI genérico (Java) ----------
+    - template: azure-pipelines/templates/ci-generic.yml@iac
+      parameters:
+        language: 'python'
+        version: '3.6'
+        buildCommand: 'pip install -r requirements.txt && pytest'
+    #- job: CI_Python
+    #  displayName: "CI - Python"
+    #  container: python:3.6-slim
+    #  steps:
+    #    - checkout: self
+    #
+    #    - script: python --version
+    #      displayName: "Check Python version"
+    #
+    #    - script: pip install -r requirements.txt
+    #      displayName: "Install dependencies"
+    #
+    #    - script: pytest
+    #      displayName: "Run Unit Tests"
+
+    - job: Docker_Build
+      displayName: "Build Docker Image"
+      dependsOn: CI_Python
+      condition: succeeded()
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - checkout: self
+        - script: docker build -f devops/Dockerfile -t myapp:$(Build.BuildId) .
+          displayName: "Docker Build"
+
+# -------------------
+# STAGE 2 - CD
+# -------------------
+- stage: CD
+  displayName: "Deploy Stage"
+  condition: |
+    and(
+      succeeded(),
+      eq('${{ parameters.RUN_CD }}', 'true'),
+      or(
+        eq(variables['Build.SourceBranchName'], 'develop'),
+        eq(variables['Build.SourceBranchName'], 'master')
+      )
+    )
+  jobs:
+    - job: Deploy
+      displayName: "Deploy Job"
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - script: |
+            if [ "$(Build.SourceBranchName)" = "develop" ]; then
+              echo "Deploying to DEV environment..."
+            elif [ "$(Build.SourceBranchName)" = "master" ]; then
+              echo "Deploying to PRO environment..."
+            fi
+          displayName: "Deploy based on branch"
