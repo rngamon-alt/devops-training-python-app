@@ -28,7 +28,7 @@ stages:
 - stage: CI
   displayName: "CI Stage"
   jobs:
-    # ---------- Job CI genérico (Java) ----------
+    # ---------- Job CI genérico (Python) ----------
     - template: azure-pipelines/templates/ci-generic.yml@iac
       parameters:
         language: 'python'
